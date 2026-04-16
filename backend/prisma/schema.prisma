@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Empresa {
+  id        Int      @id @default(autoincrement())
+  nombre    String
+  slug      String   @unique
+  activa    Boolean  @default(true)
+  email     String?
+  telefono  String?
+  createdAt DateTime @default(now())
+
+  usuarios  Usuario[]
+  clientes  Cliente[]
+  pedidos   Pedido[]
+  campos    CampoCustom[]
+}
+
+model Usuario {
+  id           Int      @id @default(autoincrement())
+  empresaId    Int?
+  email        String   @unique
+  passwordHash String
+  nombre       String
+  role         String   @default("ADMIN")
+  activo       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  empresa Empresa? @relation(fields: [empresaId], references: [id])
+}
+
+model Cliente {
+  id          Int      @id @default(autoincrement())
+  empresaId   Int
+  nombre      String
+  email       String?
+  telefono    String?
+  tipo        String   @default("B2C")
+  razonSocial String?
+  cuit        String?
+  notas       String?
+  createdAt   DateTime @default(now())
+
+  empresa Empresa  @relation(fields: [empresaId], references: [id])
+  pedidos Pedido[]
+}
+
+model Pedido {
+  id           Int       @id @default(autoincrement())
+  empresaId    Int
+  clienteId    Int
+  numeroPedido Int
+  estado       String    @default("COTIZACION")
+  largo        Float?
+  ancho        Float?
+  alto         Float?
+  material     String?
+  impresion    String?
+  cantidad     Int?
+  notasCliente String?
+  notasAdmin   String?
+  precioBase   Float?
+  precioTotal  Float?
+  entregaEst   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  empresa       Empresa          @relation(fields: [empresaId], references: [id])
+  cliente       Cliente          @relation(fields: [clienteId], references: [id])
+  eventos       EventoTracking[]
+  valoresCampos ValorCampo[]
+}
+
+model EventoTracking {
+  id          Int      @id @default(autoincrement())
+  pedidoId    Int
+  estado      String
+  descripcion String?
+  createdAt   DateTime @default(now())
+
+  pedido Pedido @relation(fields: [pedidoId], references: [id])
+}
+
+model CampoCustom {
+  id           Int     @id @default(autoincrement())
+  empresaId    Int
+  nombre       String
+  tipo         String
+  opciones     String  @default("[]")
+  impactoTipo  String
+  impactoValor Float   @default(0)
+  activo       Boolean @default(true)
+  orden        Int     @default(0)
+
+  empresa Empresa      @relation(fields: [empresaId], references: [id])
+  valores ValorCampo[]
+}
+
+model ValorCampo {
+  id       Int    @id @default(autoincrement())
+  pedidoId Int
+  campoId  Int
+  valor    String
+
+  pedido Pedido      @relation(fields: [pedidoId], references: [id])
+  campo  CampoCustom @relation(fields: [campoId], references: [id])
+}
