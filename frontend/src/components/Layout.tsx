@@ -22,12 +22,11 @@ export default function Layout() {
         <div className="fixed inset-0 bg-black/40 z-20 md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      <aside className={`
-        fixed inset-y-0 left-0 z-30 w-56 bg-gray-900 flex flex-col flex-shrink-0
-        transition-transform duration-200
-        md:relative md:translate-x-0
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
+      <aside className={
+        sidebarOpen
+          ? 'fixed inset-y-0 left-0 z-30 w-56 bg-gray-900 flex flex-col flex-shrink-0 transition-transform duration-200 ease-in-out translate-x-0 md:relative md:translate-x-0'
+          : 'fixed inset-y-0 left-0 z-30 w-56 bg-gray-900 flex flex-col flex-shrink-0 transition-transform duration-200 ease-in-out -translate-x-full md:relative md:translate-x-0'
+      }>
         <div className="p-5 border-b border-gray-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
