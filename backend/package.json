@@ -3,7 +3,7 @@
   "version": "1.0.0",
 "scripts": {
   "build": "echo 'skip'",
-  "start": "npx ts-node src/index.ts",
+  "start": "npx ts-node --transpile-only src/index.ts",
   "dev": "tsx watch src/index.ts"
 },
   "dependencies": {
