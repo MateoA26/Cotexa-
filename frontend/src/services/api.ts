@@ -46,6 +46,12 @@ export const clientesApi = {
   update: (id: number, data: any) => api.patch(`/clientes/${id}`, data)
 }
 
+export const notificacionesApi = {
+  getAll: () => api.get('/notificaciones'),
+  leer: (id: number) => api.patch(`/notificaciones/${id}/leer`),
+  leerTodas: () => api.patch('/notificaciones/leer-todas'),
+}
+
 export const camposApi = {
   getAll: () => api.get('/campos'),
   create: (data: any) => api.post('/campos', data),

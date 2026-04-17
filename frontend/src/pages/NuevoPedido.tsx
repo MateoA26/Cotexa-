@@ -19,6 +19,56 @@ const DESCUENTOS = [
   { desde: 250, desc: 0.05 }
 ]
 
+type BreakdownItem = { label: string; delta: number }
+
+function calcularPrecio(
+  campos: CampoCustom[],
+  impresion: string,
+  cantidad: number,
+  valoresCampos: Record<number, string>
+): { unitario: number; total: number; descuento: number; breakdown: BreakdownItem[] } {
+  const breakdown: BreakdownItem[] = []
+  breakdown.push({ label: 'Precio base', delta: PRECIO_BASE })
+  let precio = PRECIO_BASE
+
+  const recImp = IMPRESIONES.find(i => i.value === impresion)?.recargo || 0
+  if (recImp > 0) {
+    const label = IMPRESIONES.find(i => i.value === impresion)!.label
+    const delta = Math.round(precio * recImp)
+    precio = precio * (1 + recImp)
+    breakdown.push({ label: `${label} (+${recImp * 100}%)`, delta })
+  }
+
+  campos.forEach(c => {
+    const val = valoresCampos[c.id]
+    if (!val || val === 'false') return
+    let delta = 0
+    if (c.impactoTipo === 'PORCENTAJE') {
+      delta = Math.round(precio * c.impactoValor / 100)
+      precio *= (1 + c.impactoValor / 100)
+      breakdown.push({ label: `${c.nombre} (+${c.impactoValor}%)`, delta })
+    } else if (c.impactoTipo === 'FIJO') {
+      delta = c.impactoValor
+      precio += c.impactoValor
+      breakdown.push({ label: `${c.nombre} (fijo)`, delta })
+    } else if (c.impactoTipo === 'POR_UNIDAD') {
+      delta = Math.round((Number(val) || 0) * c.impactoValor)
+      precio += delta
+      breakdown.push({ label: `${c.nombre} (×${val} u.)`, delta })
+    }
+  })
+
+  const descObj = DESCUENTOS.find(d => cantidad >= d.desde)
+  const descuento = descObj?.desc || 0
+  if (descuento > 0) {
+    const delta = -Math.round(precio * descuento)
+    breakdown.push({ label: `Descuento volumen (-${descuento * 100}%)`, delta })
+    precio = precio * (1 - descuento)
+  }
+
+  return { unitario: Math.round(precio), total: Math.round(precio * cantidad), descuento, breakdown }
+}
+
 export default function NuevoPedido() {
   const navigate = useNavigate()
   const [clienteId, setClienteId] = useState('')
@@ -34,6 +84,7 @@ export default function NuevoPedido() {
   const [precioUnitario, setPrecioUnitario] = useState(PRECIO_BASE)
   const [precioTotal, setPrecioTotal] = useState(PRECIO_BASE * 100)
   const [descuentoAplicado, setDescuentoAplicado] = useState(0)
+  const [breakdown, setBreakdown] = useState<BreakdownItem[]>([{ label: 'Precio base', delta: PRECIO_BASE }])
 
   const { data: clientes = [] } = useQuery<Cliente[]>({
     queryKey: ['clientes'],
@@ -67,24 +118,11 @@ export default function NuevoPedido() {
 
   useEffect(() => {
     const cant = Number(cantidad) || 0
-    const recImp = IMPRESIONES.find(i => i.value === impresion)?.recargo || 0
-    let precio = PRECIO_BASE * (1 + recImp)
-
-    campos.forEach(c => {
-      const val = valoresCampos[c.id]
-      if (!val || val === 'false') return
-      if (c.impactoTipo === 'PORCENTAJE') precio *= (1 + c.impactoValor / 100)
-      else if (c.impactoTipo === 'FIJO') precio += c.impactoValor
-      else if (c.impactoTipo === 'POR_UNIDAD') precio += (Number(val) || 0) * c.impactoValor
-    })
-
-    const descObj = DESCUENTOS.find(d => cant >= d.desde)
-    const desc = descObj?.desc || 0
-    setDescuentoAplicado(desc)
-    precio = precio * (1 - desc)
-
-    setPrecioUnitario(Math.round(precio))
-    setPrecioTotal(Math.round(precio * cant))
+    const result = calcularPrecio(campos, impresion, cant, valoresCampos)
+    setDescuentoAplicado(result.descuento)
+    setPrecioUnitario(result.unitario)
+    setPrecioTotal(result.total)
+    setBreakdown(result.breakdown)
   }, [cantidad, impresion, valoresCampos, campos])
 
   const ic = "w-full h-11 px-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
@@ -212,34 +250,29 @@ export default function NuevoPedido() {
               <p className="text-sm font-semibold text-gray-900">Cotización en tiempo real</p>
             </div>
 
-            <div className="space-y-3 mb-5">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Precio base</span>
-                <span className="text-gray-700">${PRECIO_BASE}/u</span>
+            <div className="mb-5">
+              <div className="space-y-1.5 mb-3">
+                {breakdown.map((item, i) => (
+                  <div key={i} className="flex justify-between text-sm">
+                    <span className={item.delta < 0 ? 'text-emerald-600' : i === 0 ? 'text-gray-500' : 'text-gray-400'}>
+                      {i > 0 && item.delta >= 0 ? '+ ' : ''}{item.label}
+                    </span>
+                    <span className={`font-medium ${item.delta < 0 ? 'text-emerald-600' : i === 0 ? 'text-gray-700' : 'text-gray-700'}`}>
+                      {item.delta < 0 ? '-' : i > 0 ? '+' : ''}${Math.abs(item.delta).toLocaleString('es-AR')}
+                    </span>
+                  </div>
+                ))}
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Impresión</span>
-                <span className="text-gray-700">
-                  {IMPRESIONES.find(i => i.value === impresion)?.recargo
-                    ? `+${IMPRESIONES.find(i => i.value === impresion)!.recargo * 100}%`
-                    : 'Sin cargo'}
-                </span>
-              </div>
-              {descuentoAplicado > 0 && (
+              <div className="border-t border-gray-100 pt-2.5 space-y-1.5">
                 <div className="flex justify-between text-sm">
-                  <span className="text-emerald-600">Descuento volumen</span>
-                  <span className="text-emerald-600">-{descuentoAplicado * 100}%</span>
+                  <span className="text-gray-500">Precio unitario</span>
+                  <span className="font-semibold text-gray-900">${precioUnitario.toLocaleString('es-AR')}/u</span>
                 </div>
-              )}
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Precio unitario</span>
-                <span className="font-medium text-gray-900">${precioUnitario.toLocaleString('es-AR')}</span>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">× {Number(cantidad).toLocaleString('es-AR')} unidades</span>
+                </div>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Cantidad</span>
-                <span className="font-medium text-gray-900">{Number(cantidad).toLocaleString('es-AR')} u.</span>
-              </div>
-              <div className="border-t border-gray-100 pt-3 flex justify-between items-baseline">
+              <div className="border-t border-gray-100 mt-2.5 pt-2.5 flex justify-between items-baseline">
                 <span className="text-sm font-semibold text-gray-900">Total estimado</span>
                 <span className="text-2xl font-bold text-sky-600">${precioTotal.toLocaleString('es-AR')}</span>
               </div>

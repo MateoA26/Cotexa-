@@ -69,7 +69,7 @@ export default function Login() {
           </div>
         </div>
         <p className="text-white/25 text-xs text-center mt-10 md:mt-0 pb-2">
-          © 2025 Cotexa. Todos los derechos reservados.
+          © 2026 Cotexa. Todos los derechos reservados.
         </p>
       </div>
 

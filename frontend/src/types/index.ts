@@ -72,6 +72,15 @@ export interface Pedido {
   valoresCampos?: ValorCampo[]
 }
 
+export interface Notificacion {
+  id: number
+  empresaId: number
+  mensaje: string
+  leida: boolean
+  creadaEn: string
+  pedidoId?: number | null
+}
+
 export interface DashboardData {
   totalPedidos: number
   pedidosActivos: number

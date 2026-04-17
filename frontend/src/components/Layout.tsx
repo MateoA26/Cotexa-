@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { LayoutDashboard, Package, Users, LogOut, Menu, X, Settings } from 'lucide-react'
+import NotificationBell from './NotificationBell'
 
 export default function Layout() {
   const { user, logout } = useAuth()
@@ -31,11 +32,14 @@ export default function Layout() {
           : 'fixed inset-y-0 left-0 z-30 w-56 flex flex-col flex-shrink-0 transition-transform duration-200 ease-in-out -translate-x-full md:relative md:translate-x-0'
       } style={{ background: '#1e3a5f' }}>
         <div className="p-5 border-b border-white/10">
-          <div className="flex items-center justify-between">
-            <img src="/Imagenes/Copia de Logo fondo azul.png" alt="Cotexa" className="h-10 w-auto" />
-            <button onClick={() => setSidebarOpen(false)} className="md:hidden text-white/40 hover:text-white p-1 rounded transition-colors">
-              <X size={16} />
-            </button>
+          <div className="flex items-center justify-between gap-2">
+            <img src="/Imagenes/Copia de Logo fondo azul.png" alt="Cotexa" className="h-10 w-auto flex-1 min-w-0" />
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <NotificationBell />
+              <button onClick={() => setSidebarOpen(false)} className="md:hidden text-white/40 hover:text-white p-1 rounded transition-colors">
+                <X size={16} />
+              </button>
+            </div>
           </div>
           <p className="text-white/40 text-xs mt-1.5 truncate">{user?.nombre}</p>
         </div>

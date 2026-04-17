@@ -16,10 +16,23 @@ model Empresa {
   telefono  String?
   createdAt DateTime @default(now())
 
-  usuarios  Usuario[]
-  clientes  Cliente[]
-  pedidos   Pedido[]
-  campos    CampoCustom[]
+  usuarios       Usuario[]
+  clientes       Cliente[]
+  pedidos        Pedido[]
+  campos         CampoCustom[]
+  notificaciones Notificacion[]
+}
+
+model Notificacion {
+  id        Int      @id @default(autoincrement())
+  empresaId Int
+  mensaje   String
+  leida     Boolean  @default(false)
+  creadaEn  DateTime @default(now())
+  pedidoId  Int?
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+  pedido  Pedido? @relation(fields: [pedidoId], references: [id])
 }
 
 model Usuario {
@@ -75,6 +88,7 @@ model Pedido {
   cliente       Cliente          @relation(fields: [clienteId], references: [id])
   eventos       EventoTracking[]
   valoresCampos ValorCampo[]
+  notificaciones Notificacion[]
 }
 
 model EventoTracking {

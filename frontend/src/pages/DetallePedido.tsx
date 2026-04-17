@@ -20,6 +20,55 @@ const DESCUENTOS = [
   { desde: 250, desc: 0.05 },
 ]
 
+type BreakdownItem = { label: string; delta: number }
+
+function calcularPrecio(
+  campos: CampoCustom[],
+  impresion: string,
+  cantidad: number,
+  valoresCampos: Record<number, string>
+): { unitario: number; total: number; descuento: number; breakdown: BreakdownItem[] } {
+  const breakdown: BreakdownItem[] = [{ label: 'Precio base', delta: PRECIO_BASE }]
+  let precio = PRECIO_BASE
+
+  const recImp = IMPRESIONES.find(i => i.value === impresion)?.recargo || 0
+  if (recImp > 0) {
+    const label = IMPRESIONES.find(i => i.value === impresion)!.label
+    const delta = Math.round(precio * recImp)
+    precio = precio * (1 + recImp)
+    breakdown.push({ label: `${label} (+${recImp * 100}%)`, delta })
+  }
+
+  campos.forEach(c => {
+    const val = valoresCampos[c.id]
+    if (!val || val === 'false') return
+    let delta = 0
+    if (c.impactoTipo === 'PORCENTAJE') {
+      delta = Math.round(precio * c.impactoValor / 100)
+      precio *= (1 + c.impactoValor / 100)
+      breakdown.push({ label: `${c.nombre} (+${c.impactoValor}%)`, delta })
+    } else if (c.impactoTipo === 'FIJO') {
+      delta = c.impactoValor
+      precio += c.impactoValor
+      breakdown.push({ label: `${c.nombre} (fijo)`, delta })
+    } else if (c.impactoTipo === 'POR_UNIDAD') {
+      delta = Math.round((Number(val) || 0) * c.impactoValor)
+      precio += delta
+      breakdown.push({ label: `${c.nombre} (×${val} u.)`, delta })
+    }
+  })
+
+  const descObj = DESCUENTOS.find(d => cantidad >= d.desde)
+  const descuento = descObj?.desc || 0
+  if (descuento > 0) {
+    const delta = -Math.round(precio * descuento)
+    breakdown.push({ label: `Descuento volumen (-${descuento * 100}%)`, delta })
+    precio = precio * (1 - descuento)
+  }
+
+  return { unitario: Math.round(precio), total: Math.round(precio * cantidad), descuento, breakdown }
+}
+
 function printQuote(pedido: Pedido) {
   const logoUrl = `${window.location.origin}/Imagenes/Copia de Logo fondo azul.png`
   const win = window.open('', '_blank', 'width=850,height=700')
@@ -134,6 +183,7 @@ export default function DetallePedido() {
   const [editPrecioUnitario, setEditPrecioUnitario] = useState(PRECIO_BASE)
   const [editPrecioTotal, setEditPrecioTotal] = useState(0)
   const [editDescuento, setEditDescuento] = useState(0)
+  const [editBreakdown, setEditBreakdown] = useState<BreakdownItem[]>([{ label: 'Precio base', delta: PRECIO_BASE }])
 
   const { data: pedido, isLoading } = useQuery<Pedido>({
     queryKey: ['pedido', id],
@@ -162,21 +212,11 @@ export default function DetallePedido() {
   useEffect(() => {
     if (!isEditing) return
     const cant = Number(editCantidad) || 0
-    const recImp = IMPRESIONES.find(i => i.value === editImpresion)?.recargo || 0
-    let precio = PRECIO_BASE * (1 + recImp)
-    campos.forEach(c => {
-      const val = editValoresCampos[c.id]
-      if (!val || val === 'false') return
-      if (c.impactoTipo === 'PORCENTAJE') precio *= (1 + c.impactoValor / 100)
-      else if (c.impactoTipo === 'FIJO') precio += c.impactoValor
-      else if (c.impactoTipo === 'POR_UNIDAD') precio += (Number(val) || 0) * c.impactoValor
-    })
-    const descObj = DESCUENTOS.find(d => cant >= d.desde)
-    const desc = descObj?.desc || 0
-    setEditDescuento(desc)
-    precio = precio * (1 - desc)
-    setEditPrecioUnitario(Math.round(precio))
-    setEditPrecioTotal(Math.round(precio * cant))
+    const result = calcularPrecio(campos, editImpresion, cant, editValoresCampos)
+    setEditDescuento(result.descuento)
+    setEditPrecioUnitario(result.unitario)
+    setEditPrecioTotal(result.total)
+    setEditBreakdown(result.breakdown)
   }, [editCantidad, editImpresion, editValoresCampos, campos, isEditing])
 
   const startEditing = () => {
@@ -400,35 +440,28 @@ export default function DetallePedido() {
                 <Calculator size={15} className="text-sky-500" />
                 <p className="text-sm font-semibold text-gray-900">Cotización</p>
               </div>
-              <div className="space-y-2.5 mb-5 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Precio base</span>
-                  <span className="text-gray-700">${PRECIO_BASE}/u</span>
+              <div className="mb-5">
+                <div className="space-y-1.5 mb-3">
+                  {editBreakdown.map((item, i) => (
+                    <div key={i} className="flex justify-between text-sm">
+                      <span className={item.delta < 0 ? 'text-emerald-600' : i === 0 ? 'text-gray-500' : 'text-gray-400'}>
+                        {i > 0 && item.delta >= 0 ? '+ ' : ''}{item.label}
+                      </span>
+                      <span className={`font-medium ${item.delta < 0 ? 'text-emerald-600' : 'text-gray-700'}`}>
+                        {item.delta < 0 ? '-' : i > 0 ? '+' : ''}${Math.abs(item.delta).toLocaleString('es-AR')}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Impresión</span>
-                  <span className="text-gray-700">
-                    {IMPRESIONES.find(i => i.value === editImpresion)?.recargo
-                      ? `+${IMPRESIONES.find(i => i.value === editImpresion)!.recargo * 100}%`
-                      : 'Sin cargo'}
-                  </span>
-                </div>
-                {editDescuento > 0 && (
-                  <div className="flex justify-between text-emerald-600">
-                    <span>Descuento volumen</span>
-                    <span>-{editDescuento * 100}%</span>
+                <div className="border-t border-gray-100 pt-2.5 space-y-1.5">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Precio unitario</span>
+                    <span className="font-semibold text-gray-900">${editPrecioUnitario.toLocaleString('es-AR')}/u</span>
                   </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Precio unitario</span>
-                  <span className="font-medium text-gray-900">${editPrecioUnitario.toLocaleString('es-AR')}</span>
+                  <div className="text-sm text-gray-400">× {Number(editCantidad).toLocaleString('es-AR')} unidades</div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Cantidad</span>
-                  <span className="font-medium text-gray-900">{Number(editCantidad).toLocaleString('es-AR')} u.</span>
-                </div>
-                <div className="border-t border-gray-100 pt-2.5 flex justify-between items-baseline">
-                  <span className="font-semibold text-gray-900">Total estimado</span>
+                <div className="border-t border-gray-100 mt-2.5 pt-2.5 flex justify-between items-baseline">
+                  <span className="text-sm font-semibold text-gray-900">Total estimado</span>
                   <span className="text-2xl font-bold text-sky-600">${editPrecioTotal.toLocaleString('es-AR')}</span>
                 </div>
               </div>

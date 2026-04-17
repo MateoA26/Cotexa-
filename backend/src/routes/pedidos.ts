@@ -63,6 +63,15 @@ router.post('/', async (req: AuthRequest, res: Response) => {
     },
     include: { cliente: true }
   })
+
+  const estadoPedido = estado || 'COTIZACION'
+  const mensaje = estadoPedido === 'COTIZACION'
+    ? `Nueva cotización de ${pedido.cliente.nombre}`
+    : `Nuevo pedido de ${pedido.cliente.nombre}`
+  await prisma.notificacion.create({
+    data: { empresaId: req.user!.empresaId!, mensaje, pedidoId: pedido.id }
+  })
+
   res.json(pedido)
 })
 
@@ -110,6 +119,18 @@ router.patch('/:id', async (req: AuthRequest, res: Response) => {
       valoresCampos: { include: { campo: true } }
     }
   })
+  if (estado && estado !== pedido.estado) {
+    let mensaje: string | null = null
+    if (estado === 'CONFIRMADO') mensaje = `Pedido #${updated.numeroPedido} confirmado`
+    else if (estado === 'COTIZACION') mensaje = `Nueva cotización lista para ${updated.cliente.nombre}`
+    else if (estado === 'ENTREGADO') mensaje = `Pedido #${updated.numeroPedido} entregado`
+    if (mensaje) {
+      await prisma.notificacion.create({
+        data: { empresaId: req.user!.empresaId!, mensaje, pedidoId: pedidoId }
+      })
+    }
+  }
+
   res.json(updated)
 })
 

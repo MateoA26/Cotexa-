@@ -6,6 +6,7 @@ import pedidosRoutes from './routes/pedidos'
 import clientesRoutes from './routes/clientes'
 import dashboardRoutes from './routes/dashboard'
 import camposRoutes from './routes/campos'
+import notificacionesRoutes from './routes/notificaciones'
 
 dotenv.config()
 
@@ -20,6 +21,7 @@ app.use('/api/pedidos', pedidosRoutes)
 app.use('/api/clientes', clientesRoutes)
 app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/campos', camposRoutes)
+app.use('/api/notificaciones', notificacionesRoutes)
 
 app.listen(PORT, () => {
   console.log(`✅ Cotexa backend corriendo en http://localhost:${PORT}`)
