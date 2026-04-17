@@ -38,7 +38,6 @@ router.post('/seed', async (_req: Request, res: Response) => {
       create: { email: 'admin@cotexa.com', passwordHash: hash, nombre: 'Admin Demo', role: 'ADMIN', empresaId: empresa.id }
     })
     await (prisma.cliente as any).createMany({
-      skipDuplicates: true,
       data: [
         { empresaId: empresa.id, nombre: 'María García', email: 'maria@ejemplo.com', tipo: 'B2C', telefono: '1145001234' },
         { empresaId: empresa.id, nombre: 'ACME S.A.', email: 'compras@acme.com', tipo: 'B2B', razonSocial: 'ACME S.A.', cuit: '30-12345678-9' }
