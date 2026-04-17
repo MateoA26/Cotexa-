@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { authApi } from '../services/api'
-import { Boxes } from 'lucide-react'
 
 export default function Login() {
   const [email, setEmail] = useState('admin@cotexa.com')
@@ -30,11 +29,8 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full max-w-sm p-6 sm:p-8">
-        <div className="flex items-center gap-2.5 mb-8">
-          <div className="bg-sky-500 rounded-lg p-2">
-            <Boxes size={18} className="text-white" />
-          </div>
-          <span className="text-xl font-bold text-gray-900 tracking-tight">Cotexa</span>
+        <div className="mb-8">
+          <img src="/Imagenes/Copia de Logo fondo azul.png" alt="Cotexa" className="h-12 w-auto" />
         </div>
 
         <h1 className="text-lg font-semibold text-gray-900 mb-1">Iniciar sesión</h1>

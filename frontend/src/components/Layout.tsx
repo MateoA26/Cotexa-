@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { LayoutDashboard, Package, Users, LogOut, Boxes, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Package, Users, LogOut, Menu, X } from 'lucide-react'
 
 export default function Layout() {
   const { user, logout } = useAuth()
@@ -29,12 +29,7 @@ export default function Layout() {
       }>
         <div className="p-5 border-b border-gray-800">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="bg-sky-500 rounded-lg p-1.5">
-                <Boxes size={16} className="text-white" />
-              </div>
-              <span className="text-white font-bold text-lg tracking-tight">Cotexa</span>
-            </div>
+            <img src="/Imagenes/Copia de Logo fondo azul.png" alt="Cotexa" className="h-10 w-auto" />
             <button onClick={() => setSidebarOpen(false)} className="md:hidden text-gray-400 hover:text-white p-1 rounded transition-colors">
               <X size={16} />
             </button>
@@ -70,12 +65,7 @@ export default function Layout() {
           <button onClick={() => setSidebarOpen(true)} className="text-gray-400 hover:text-white p-1">
             <Menu size={20} />
           </button>
-          <div className="flex items-center gap-2">
-            <div className="bg-sky-500 rounded-lg p-1">
-              <Boxes size={14} className="text-white" />
-            </div>
-            <span className="text-white font-bold tracking-tight">Cotexa</span>
-          </div>
+          <img src="/Imagenes/Copia de Logo fondo azul.png" alt="Cotexa" className="h-8 w-auto" />
         </header>
         <main className="flex-1 overflow-auto">
           <Outlet />
