@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { LayoutDashboard, Package, Users, LogOut, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Package, Users, LogOut, Menu, X, Settings } from 'lucide-react'
 
 export default function Layout() {
   const { user, logout } = useAuth()
@@ -10,10 +10,13 @@ export default function Layout() {
 
   const handleLogout = () => { logout(); navigate('/login') }
 
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPERADMIN'
+
   const navItems = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/pedidos', icon: Package, label: 'Pedidos' },
     { to: '/clientes', icon: Users, label: 'Clientes' },
+    ...(isAdmin ? [{ to: '/configuracion', icon: Settings, label: 'Configuración' }] : []),
   ]
 
   return (
@@ -24,17 +27,17 @@ export default function Layout() {
 
       <aside className={
         sidebarOpen
-          ? 'fixed inset-y-0 left-0 z-30 w-56 bg-gray-900 flex flex-col flex-shrink-0 transition-transform duration-200 ease-in-out translate-x-0 md:relative md:translate-x-0'
-          : 'fixed inset-y-0 left-0 z-30 w-56 bg-gray-900 flex flex-col flex-shrink-0 transition-transform duration-200 ease-in-out -translate-x-full md:relative md:translate-x-0'
-      }>
-        <div className="p-5 border-b border-gray-800">
+          ? 'fixed inset-y-0 left-0 z-30 w-56 flex flex-col flex-shrink-0 transition-transform duration-200 ease-in-out translate-x-0 md:relative md:translate-x-0'
+          : 'fixed inset-y-0 left-0 z-30 w-56 flex flex-col flex-shrink-0 transition-transform duration-200 ease-in-out -translate-x-full md:relative md:translate-x-0'
+      } style={{ background: '#1e3a5f' }}>
+        <div className="p-5 border-b border-white/10">
           <div className="flex items-center justify-between">
             <img src="/Imagenes/Copia de Logo fondo azul.png" alt="Cotexa" className="h-10 w-auto" />
-            <button onClick={() => setSidebarOpen(false)} className="md:hidden text-gray-400 hover:text-white p-1 rounded transition-colors">
+            <button onClick={() => setSidebarOpen(false)} className="md:hidden text-white/40 hover:text-white p-1 rounded transition-colors">
               <X size={16} />
             </button>
           </div>
-          <p className="text-gray-500 text-xs mt-1.5 truncate">{user?.nombre}</p>
+          <p className="text-white/40 text-xs mt-1.5 truncate">{user?.nombre}</p>
         </div>
 
         <nav className="flex-1 p-3 space-y-0.5">
@@ -42,7 +45,7 @@ export default function Layout() {
             <NavLink key={to} to={to} onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
-                  isActive ? 'bg-sky-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                  isActive ? 'bg-sky-500 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'
                 }`
               }>
               <Icon size={16} />
@@ -51,9 +54,9 @@ export default function Layout() {
           ))}
         </nav>
 
-        <div className="p-3 border-t border-gray-800">
+        <div className="p-3 border-t border-white/10">
           <button onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-400 hover:bg-gray-800 w-full transition-colors">
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-400 hover:bg-white/10 w-full transition-colors">
             <LogOut size={16} />
             Cerrar sesión
           </button>
@@ -61,8 +64,8 @@ export default function Layout() {
       </aside>
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <header className="md:hidden flex items-center gap-3 bg-gray-900 px-4 py-3 flex-shrink-0">
-          <button onClick={() => setSidebarOpen(true)} className="text-gray-400 hover:text-white p-1">
+        <header className="md:hidden flex items-center gap-3 px-4 py-3 flex-shrink-0" style={{ background: '#1e3a5f' }}>
+          <button onClick={() => setSidebarOpen(true)} className="text-white/60 hover:text-white p-1">
             <Menu size={20} />
           </button>
           <img src="/Imagenes/Copia de Logo fondo azul.png" alt="Cotexa" className="h-8 w-auto" />

@@ -12,7 +12,7 @@ export const ESTADO_LABELS: Record<string, string> = {
 export const ESTADO_COLORS: Record<string, string> = {
   COTIZACION: '#9ca3af',
   PENDIENTE: '#f59e0b',
-  CONFIRMADO: '#3b82f6',
+  CONFIRMADO: '#10b981',
   EN_PRODUCCION: '#8b5cf6',
   LISTO: '#14b8a6',
   ENVIADO: '#10b981',

@@ -1,15 +1,39 @@
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { dashboardApi } from '../services/api'
-import { DashboardData } from '../types'
+import { dashboardApi, pedidosApi } from '../services/api'
+import { DashboardData, Pedido } from '../types'
 import { ESTADO_LABELS, ESTADO_COLORS } from '../utils/estados'
 import { Package, Users, TrendingUp, Clock } from 'lucide-react'
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts'
 
 export default function Dashboard() {
   const { data, isLoading } = useQuery<DashboardData>({
     queryKey: ['dashboard'],
     queryFn: () => dashboardApi.get().then(r => r.data)
   })
+
+  const { data: allPedidos = [] } = useQuery<Pedido[]>({
+    queryKey: ['pedidos-trend'],
+    queryFn: () => pedidosApi.getAll().then(r => r.data),
+  })
+
+  const trendData = useMemo(() => {
+    const now = new Date()
+    const dateMap: Record<string, number> = {}
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(now)
+      d.setDate(now.getDate() - i)
+      dateMap[d.toISOString().split('T')[0]] = 0
+    }
+    allPedidos.forEach(p => {
+      const date = p.createdAt.split('T')[0]
+      if (dateMap[date] !== undefined) dateMap[date]++
+    })
+    return Object.entries(dateMap).map(([date, pedidos]) => ({
+      fecha: new Date(date + 'T12:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }),
+      pedidos,
+    }))
+  }, [allPedidos])
 
   if (isLoading) return <div className="p-8 text-sm text-gray-400">Cargando...</div>
   if (!data) return null
@@ -127,6 +151,42 @@ export default function Dashboard() {
             <div className="flex items-center justify-center h-32 text-xs text-gray-400">Sin datos todavía</div>
           )}
         </div>
+      </div>
+
+      {/* Trend chart */}
+      <div className="mt-4 bg-white rounded-xl border border-gray-200 p-5">
+        <p className="text-sm font-medium text-gray-900 mb-4">Tendencia de pedidos — últimos 30 días</p>
+        <ResponsiveContainer width="100%" height={180}>
+          <LineChart data={trendData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+            <XAxis
+              dataKey="fecha"
+              tick={{ fontSize: 10, fill: '#9ca3af' }}
+              tickLine={false}
+              axisLine={false}
+              interval={4}
+            />
+            <YAxis
+              tick={{ fontSize: 10, fill: '#9ca3af' }}
+              tickLine={false}
+              axisLine={false}
+              allowDecimals={false}
+            />
+            <Tooltip
+              contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb', boxShadow: 'none' }}
+              formatter={(v: any) => [v, 'pedidos']}
+              labelStyle={{ color: '#374151', fontWeight: 600 }}
+            />
+            <Line
+              type="monotone"
+              dataKey="pedidos"
+              stroke="#0ea5e9"
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 4, fill: '#0ea5e9' }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
       </div>
     </div>
   )

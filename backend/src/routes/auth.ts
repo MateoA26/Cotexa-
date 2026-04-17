@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import { requireAuth, AuthRequest } from '../middleware/auth'
 
 const router = Router()
 const prisma = new PrismaClient()
@@ -47,6 +48,11 @@ router.post('/seed', async (_req: Request, res: Response) => {
   } catch (err) {
     res.status(500).json({ error: String(err) })
   }
+})
+
+router.get('/empresa', requireAuth, async (req: AuthRequest, res: Response) => {
+  const empresa = await prisma.empresa.findFirst({ where: { id: req.user!.empresaId! } })
+  res.json(empresa || {})
 })
 
 export default router

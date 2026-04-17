@@ -25,6 +25,10 @@ export const authApi = {
   seed: () => api.post('/auth/seed')
 }
 
+export const empresaApi = {
+  get: () => api.get('/auth/empresa')
+}
+
 export const dashboardApi = {
   get: () => api.get('/dashboard')
 }

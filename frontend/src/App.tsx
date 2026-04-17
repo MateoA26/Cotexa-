@@ -7,6 +7,7 @@ import Pedidos from './pages/Pedidos'
 import NuevoPedido from './pages/NuevoPedido'
 import DetallePedido from './pages/DetallePedido'
 import Clientes from './pages/Clientes'
+import Configuracion from './pages/Configuracion'
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth()
@@ -24,6 +25,7 @@ export default function App() {
         <Route path="pedidos/nuevo" element={<NuevoPedido />} />
         <Route path="pedidos/:id" element={<DetallePedido />} />
         <Route path="clientes" element={<Clientes />} />
+        <Route path="configuracion" element={<Configuracion />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
