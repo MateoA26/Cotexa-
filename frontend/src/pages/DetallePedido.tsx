@@ -43,20 +43,22 @@ export default function DetallePedido() {
   const estadosProgreso = ESTADOS_ORDEN.filter(e => e !== 'CANCELADO')
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
+    <div className="p-4 md:p-6 max-w-4xl mx-auto">
+      <div className="flex items-start gap-3 mb-6">
         <button onClick={() => navigate('/pedidos')}
-          className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+          className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0 mt-0.5">
           <ArrowLeft size={17} />
         </button>
-        <div className="flex-1 flex items-center gap-3">
-          <h1 className="text-xl font-semibold text-gray-900">Pedido #{pedido.numeroPedido}</h1>
-          <span className="text-xs px-2.5 py-1 rounded-full font-medium"
-            style={{ background: ESTADO_COLORS[pedido.estado] + '20', color: ESTADO_COLORS[pedido.estado] }}>
-            {ESTADO_LABELS[pedido.estado]}
-          </span>
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 gap-y-1">
+            <h1 className="text-xl font-semibold text-gray-900">Pedido #{pedido.numeroPedido}</h1>
+            <span className="text-xs px-2.5 py-1 rounded-full font-medium"
+              style={{ background: ESTADO_COLORS[pedido.estado] + '20', color: ESTADO_COLORS[pedido.estado] }}>
+              {ESTADO_LABELS[pedido.estado]}
+            </span>
+          </div>
+          <p className="text-sm text-gray-400 mt-0.5">{pedido.cliente.nombre}</p>
         </div>
-        <p className="text-sm text-gray-400">{pedido.cliente.nombre}</p>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4 overflow-x-auto">
@@ -88,7 +90,7 @@ export default function DetallePedido() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Cliente</p>
           <p className="font-semibold text-gray-900">{pedido.cliente.nombre}</p>
@@ -128,7 +130,7 @@ export default function DetallePedido() {
       {pedido.valoresCampos && pedido.valoresCampos.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Opciones adicionales</p>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {pedido.valoresCampos.map(v => (
               <div key={v.id} className="text-sm">
                 <span className="text-gray-400">{v.campo.nombre}: </span>
@@ -143,12 +145,12 @@ export default function DetallePedido() {
 
       <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Gestionar pedido</p>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1.5">Cambiar estado</label>
             <select defaultValue={pedido.estado}
               onChange={e => mutation.mutate({ estado: e.target.value })}
-              className="w-full h-9 px-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+              className="w-full h-11 px-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
               {ESTADOS_ORDEN.map(e => (
                 <option key={e} value={e}>{ESTADO_LABELS[e]}</option>
               ))}
@@ -159,9 +161,9 @@ export default function DetallePedido() {
             <div className="flex gap-2">
               <input value={notasAdmin} onChange={e => setNotasAdmin(e.target.value)}
                 placeholder="Notas para el equipo..."
-                className="flex-1 h-9 px-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                className="flex-1 h-11 px-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
               <button onClick={saveNotas}
-                className={`h-9 px-3 rounded-lg text-xs font-medium transition-colors ${
+                className={`h-11 px-3 rounded-lg text-xs font-medium transition-colors flex-shrink-0 ${
                   notasSaved ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                 }`}>
                 {notasSaved ? '✓ Guardado' : 'Guardar'}

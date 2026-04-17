@@ -29,7 +29,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full max-w-sm p-8">
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full max-w-sm p-6 sm:p-8">
         <div className="flex items-center gap-2.5 mb-8">
           <div className="bg-sky-500 rounded-lg p-2">
             <Boxes size={18} className="text-white" />
@@ -50,15 +50,15 @@ export default function Login() {
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1.5">Email</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
-              className="w-full h-10 px-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all" />
+              className="w-full h-11 px-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all" />
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1.5">Contraseña</label>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
-              className="w-full h-10 px-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all" />
+              className="w-full h-11 px-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all" />
           </div>
           <button type="submit" disabled={loading}
-            className="w-full h-10 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 mt-2">
+            className="w-full h-11 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 mt-2">
             {loading ? 'Ingresando...' : 'Ingresar'}
           </button>
         </form>

@@ -87,12 +87,12 @@ export default function NuevoPedido() {
     setPrecioTotal(Math.round(precio * cant))
   }, [cantidad, impresion, valoresCampos, campos])
 
-  const ic = "w-full h-9 px-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
+  const ic = "w-full h-11 px-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
   const lc = "block text-xs font-medium text-gray-500 mb-1.5"
   const canSubmit = !!clienteId && !mutation.isPending
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-4 md:p-6 max-w-6xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <button onClick={() => navigate('/pedidos')}
           className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
@@ -104,8 +104,8 @@ export default function NuevoPedido() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-5">
-        <div className="col-span-2 space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="lg:col-span-2 space-y-4">
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Cliente</p>
             <label className={lc}>Seleccionar cliente *</label>
@@ -121,7 +121,7 @@ export default function NuevoPedido() {
 
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Especificaciones</p>
-            <div className="grid grid-cols-3 gap-3 mb-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
               {[['Largo (cm)', largo, setLargo], ['Ancho (cm)', ancho, setAncho], ['Alto (cm)', alto, setAlto]].map(([label, val, setter]) => (
                 <div key={label as string}>
                   <label className={lc}>{label as string}</label>
@@ -131,7 +131,7 @@ export default function NuevoPedido() {
                 </div>
               ))}
             </div>
-            <div className="grid grid-cols-2 gap-3 mb-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div>
                 <label className={lc}>Material</label>
                 <select value={material} onChange={e => setMaterial(e.target.value)} className={ic}>
@@ -149,7 +149,7 @@ export default function NuevoPedido() {
                 </select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={lc}>Cantidad de unidades</label>
                 <input type="number" value={cantidad} onChange={e => setCantidad(e.target.value)} min="1" className={ic} />
@@ -167,7 +167,7 @@ export default function NuevoPedido() {
           {campos.length > 0 && (
             <div className="bg-white rounded-xl border border-gray-200 p-5">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Opciones adicionales</p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {campos.map(campo => (
                   <div key={campo.id}>
                     <label className={lc}>
@@ -206,7 +206,7 @@ export default function NuevoPedido() {
         </div>
 
         <div>
-          <div className="bg-white rounded-xl border border-gray-200 p-5 sticky top-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-5 lg:sticky lg:top-6">
             <div className="flex items-center gap-2 mb-5">
               <Calculator size={15} className="text-sky-500" />
               <p className="text-sm font-semibold text-gray-900">Cotización en tiempo real</p>
@@ -253,12 +253,12 @@ export default function NuevoPedido() {
 
             <div className="space-y-2">
               <button onClick={() => mutation.mutate('COTIZACION')} disabled={!canSubmit}
-                className="w-full h-10 flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-40">
+                className="w-full h-11 flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-40">
                 <Save size={14} />
                 Guardar cotización
               </button>
               <button onClick={() => mutation.mutate('CONFIRMADO')} disabled={!canSubmit}
-                className="w-full h-10 flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-40">
+                className="w-full h-11 flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-40">
                 <CheckCircle size={14} />
                 Confirmar pedido
               </button>
