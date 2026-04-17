@@ -1,19 +1,29 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { clientesApi } from '../services/api'
-import { Cliente } from '../types'
-import { Plus, X, Users } from 'lucide-react'
+import { clientesApi, pedidosApi } from '../services/api'
+import { Cliente, Pedido } from '../types'
+import { ESTADO_LABELS, ESTADO_COLORS } from '../utils/estados'
+import { Plus, X, Users, Package, ChevronRight } from 'lucide-react'
 
 const initForm = { nombre: '', email: '', telefono: '', tipo: 'B2C', razonSocial: '', cuit: '', notas: '' }
 
 export default function Clientes() {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState(initForm)
+  const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null)
 
   const { data: clientes = [], isLoading } = useQuery<Cliente[]>({
     queryKey: ['clientes'],
     queryFn: () => clientesApi.getAll().then(r => r.data)
+  })
+
+  const { data: clientePedidos = [], isLoading: loadingPedidos } = useQuery<Pedido[]>({
+    queryKey: ['pedidos', 'cliente', selectedCliente?.id],
+    queryFn: () => pedidosApi.getAll({ clienteId: selectedCliente!.id }).then(r => r.data),
+    enabled: !!selectedCliente,
   })
 
   const mutation = useMutation({
@@ -65,7 +75,9 @@ export default function Clientes() {
               </thead>
               <tbody>
                 {clientes.map(c => (
-                  <tr key={c.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
+                  <tr key={c.id}
+                    onClick={() => setSelectedCliente(c)}
+                    className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors cursor-pointer">
                     <td className="px-5 py-3.5">
                       <p className="text-sm font-medium text-gray-900">{c.nombre}</p>
                       {c.razonSocial && <p className="text-xs text-gray-400">{c.razonSocial}</p>}
@@ -87,6 +99,111 @@ export default function Clientes() {
         )}
       </div>
 
+      {/* Client detail drawer */}
+      {selectedCliente && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/30 z-30"
+            onClick={() => setSelectedCliente(null)}
+          />
+          <div className="fixed inset-y-0 right-0 z-40 w-full max-w-md bg-white shadow-xl flex flex-col">
+
+            {/* Drawer header */}
+            <div className="flex items-start justify-between p-5 border-b border-gray-100">
+              <div>
+                <p className="font-semibold text-gray-900 text-base">{selectedCliente.nombre}</p>
+                {selectedCliente.razonSocial && (
+                  <p className="text-sm text-gray-500 mt-0.5">{selectedCliente.razonSocial}</p>
+                )}
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium mt-1.5 inline-block ${
+                  selectedCliente.tipo === 'B2B' ? 'bg-violet-50 text-violet-700' : 'bg-amber-50 text-amber-700'
+                }`}>{selectedCliente.tipo}</span>
+              </div>
+              <button onClick={() => setSelectedCliente(null)}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded transition-colors flex-shrink-0">
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Client info */}
+            <div className="p-5 border-b border-gray-100">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Información</p>
+              <div className="space-y-2">
+                {selectedCliente.email && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Email</span>
+                    <span className="text-gray-900 font-medium">{selectedCliente.email}</span>
+                  </div>
+                )}
+                {selectedCliente.telefono && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Teléfono</span>
+                    <span className="text-gray-900 font-medium">{selectedCliente.telefono}</span>
+                  </div>
+                )}
+                {selectedCliente.cuit && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">CUIT</span>
+                    <span className="text-gray-900 font-medium">{selectedCliente.cuit}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Cliente desde</span>
+                  <span className="text-gray-900 font-medium">
+                    {new Date(selectedCliente.createdAt).toLocaleDateString('es-AR')}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Order history */}
+            <div className="flex-1 overflow-y-auto p-5">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                Historial de pedidos
+              </p>
+
+              {loadingPedidos ? (
+                <p className="text-sm text-gray-400">Cargando pedidos...</p>
+              ) : clientePedidos.length === 0 ? (
+                <div className="text-center py-8">
+                  <Package size={28} className="text-gray-200 mx-auto mb-2" />
+                  <p className="text-sm text-gray-400">Sin pedidos registrados</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {clientePedidos.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => navigate(`/pedidos/${p.id}`)}
+                      className="w-full flex items-center gap-3 p-3.5 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors text-left">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-medium text-gray-900">#{p.numeroPedido}</span>
+                          <span className="text-xs px-2 py-0.5 rounded-full font-medium"
+                            style={{ background: ESTADO_COLORS[p.estado] + '18', color: ESTADO_COLORS[p.estado] }}>
+                            {ESTADO_LABELS[p.estado]}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-gray-400">
+                          <span>{new Date(p.createdAt).toLocaleDateString('es-AR')}</span>
+                          {p.precioTotal && (
+                            <span className="font-semibold text-gray-700">
+                              ${p.precioTotal.toLocaleString('es-AR')}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <ChevronRight size={15} className="text-gray-300 flex-shrink-0" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* New client modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">

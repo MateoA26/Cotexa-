@@ -30,7 +30,7 @@ export const dashboardApi = {
 }
 
 export const pedidosApi = {
-  getAll: (estado?: string) => api.get('/pedidos', { params: estado ? { estado } : {} }),
+  getAll: (params?: { estado?: string; clienteId?: number }) => api.get('/pedidos', { params }),
   getOne: (id: number) => api.get(`/pedidos/${id}`),
   create: (data: any) => api.post('/pedidos', data),
   update: (id: number, data: any) => api.patch(`/pedidos/${id}`, data)

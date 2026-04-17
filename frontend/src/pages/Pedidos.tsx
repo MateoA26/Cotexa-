@@ -15,7 +15,7 @@ export default function Pedidos() {
 
   const { data: pedidos = [], isLoading } = useQuery<Pedido[]>({
     queryKey: ['pedidos', estadoFiltro],
-    queryFn: () => pedidosApi.getAll(estadoFiltro || undefined).then(r => r.data)
+    queryFn: () => pedidosApi.getAll(estadoFiltro ? { estado: estadoFiltro } : undefined).then(r => r.data)
   })
 
   const filtrados = pedidos.filter(p =>
