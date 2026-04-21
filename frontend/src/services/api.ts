@@ -26,7 +26,8 @@ export const authApi = {
 }
 
 export const empresaApi = {
-  get: () => api.get('/auth/empresa')
+  get: () => api.get('/auth/empresa'),
+  update: (data: { nombre?: string; email?: string }) => api.patch('/auth/empresa/me', data),
 }
 
 export const dashboardApi = {

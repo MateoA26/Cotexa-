@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { camposApi, empresaApi } from '../services/api'
 import { CampoCustom } from '../types'
 import { useAuth } from '../context/AuthContext'
-import { Plus, Trash2, Edit2, Check, X, AlertTriangle, Info } from 'lucide-react'
+import { Plus, Trash2, Edit2, Check, X, AlertTriangle, Info, CheckCircle2 } from 'lucide-react'
 
 const TIPOS_CAMPO = ['BOOLEAN', 'SELECT', 'NUMBER'] as const
 const IMPACTO_TIPOS = ['PORCENTAJE', 'FIJO', 'POR_UNIDAD'] as const
@@ -51,9 +51,25 @@ export default function Configuracion() {
   const [nuevo, setNuevo] = useState(initNuevo)
   const [nuevoOpciones, setNuevoOpciones] = useState('')
 
+  const [empresaForm, setEmpresaForm] = useState({ nombre: '', email: '' })
+  const [savedOk, setSavedOk] = useState(false)
+
   const { data: empresa } = useQuery({
     queryKey: ['empresa'],
     queryFn: () => empresaApi.get().then(r => r.data),
+  })
+
+  useEffect(() => {
+    if (empresa) setEmpresaForm({ nombre: empresa.nombre || '', email: empresa.email || '' })
+  }, [empresa])
+
+  const updateEmpresaMut = useMutation({
+    mutationFn: (data: { nombre: string; email: string }) => empresaApi.update(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['empresa'] })
+      setSavedOk(true)
+      setTimeout(() => setSavedOk(false), 3000)
+    },
   })
 
   const { data: campos = [], isLoading } = useQuery<CampoCustom[]>({
@@ -131,17 +147,39 @@ export default function Configuracion() {
       {/* Datos del negocio */}
       <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Datos del negocio</p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {([
-            ['Empresa', empresa?.nombre || '—'],
-            ['Email', empresa?.email || user.email],
-            ['Slug', empresa?.slug || '—'],
-          ] as [string, string][]).map(([label, value]) => (
-            <div key={label}>
-              <p className="text-xs text-gray-400 mb-1">{label}</p>
-              <p className="text-sm font-medium text-gray-900 bg-gray-50 rounded-lg px-3 py-2.5">{value}</p>
-            </div>
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className={lc}>Nombre de la empresa</label>
+            <input
+              value={empresaForm.nombre}
+              onChange={e => setEmpresaForm(p => ({ ...p, nombre: e.target.value }))}
+              className={ic}
+            />
+          </div>
+          <div>
+            <label className={lc}>Email de contacto</label>
+            <input
+              type="email"
+              value={empresaForm.email}
+              onChange={e => setEmpresaForm(p => ({ ...p, email: e.target.value }))}
+              className={ic}
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => updateEmpresaMut.mutate(empresaForm)}
+            disabled={!empresaForm.nombre || updateEmpresaMut.isPending}
+            className="h-9 px-4 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-40"
+          >
+            {updateEmpresaMut.isPending ? 'Guardando...' : 'Guardar cambios'}
+          </button>
+          {savedOk && (
+            <span className="flex items-center gap-1.5 text-sm text-emerald-600">
+              <CheckCircle2 size={15} />
+              Datos actualizados correctamente
+            </span>
+          )}
         </div>
       </div>
 

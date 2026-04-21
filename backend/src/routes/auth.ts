@@ -2,9 +2,30 @@ import { Router, Request, Response } from 'express'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import { requireAuth, AuthRequest } from '../middleware/auth'
 
 const router = Router()
 const prisma = new PrismaClient()
+
+router.get('/empresa', requireAuth, async (req: AuthRequest, res: Response) => {
+  if (!req.user?.empresaId) return res.status(404).json({ error: 'Sin empresa' })
+  const empresa = await prisma.empresa.findUnique({ where: { id: req.user.empresaId } })
+  if (!empresa) return res.status(404).json({ error: 'Empresa no encontrada' })
+  res.json(empresa)
+})
+
+router.patch('/empresa/me', requireAuth, async (req: AuthRequest, res: Response) => {
+  if (!req.user?.empresaId) return res.status(403).json({ error: 'Sin empresa' })
+  const { nombre, email } = req.body
+  const data: any = {}
+  if (nombre !== undefined) data.nombre = nombre
+  if (email !== undefined) data.email = email
+  const empresa = await prisma.empresa.update({
+    where: { id: req.user.empresaId },
+    data
+  })
+  res.json(empresa)
+})
 
 router.post('/login', async (req: Request, res: Response) => {
   const { email, password } = req.body
