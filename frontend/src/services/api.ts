@@ -59,6 +59,9 @@ export const superadminApi = {
   getUsuarios: () => api.get('/superadmin/usuarios'),
   createUsuario: (data: any) => api.post('/superadmin/usuarios', data),
   updateUsuario: (id: number, data: any) => api.patch(`/superadmin/usuarios/${id}`, data),
+  getEmpresaUsuarios: (empresaId: number) => api.get(`/superadmin/empresas/${empresaId}/usuarios`),
+  createEmpresaUsuario: (empresaId: number, data: any) => api.post(`/superadmin/empresas/${empresaId}/usuarios`, data),
+  updateEmpresaUsuario: (empresaId: number, userId: number, data: any) => api.patch(`/superadmin/empresas/${empresaId}/usuarios/${userId}`, data),
 }
 
 export const camposApi = {

@@ -11,6 +11,7 @@ import Clientes from './pages/Clientes'
 import Configuracion from './pages/Configuracion'
 import SuperAdminEmpresas from './pages/superadmin/Empresas'
 import SuperAdminUsuarios from './pages/superadmin/Usuarios'
+import SuperAdminEmpresaDetalle from './pages/superadmin/EmpresaDetalle'
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth()
@@ -40,6 +41,7 @@ export default function App() {
       <Route path="/superadmin" element={<SuperAdminRoute><SuperAdminLayout /></SuperAdminRoute>}>
         <Route index element={<Navigate to="/superadmin/empresas" replace />} />
         <Route path="empresas" element={<SuperAdminEmpresas />} />
+        <Route path="empresas/:id" element={<SuperAdminEmpresaDetalle />} />
         <Route path="usuarios" element={<SuperAdminUsuarios />} />
       </Route>
 

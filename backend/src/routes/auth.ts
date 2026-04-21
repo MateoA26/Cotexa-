@@ -28,28 +28,55 @@ router.post('/seed', async (_req: Request, res: Response) => {
   try {
     const hashAdmin = await bcrypt.hash('admin123', 10)
     const hashDemo = await bcrypt.hash('demo123', 10)
-    const empresa = await prisma.empresa.upsert({
+    const hashTesting = await bcrypt.hash('testing123', 10)
+
+    const internalEmpresa = await prisma.empresa.upsert({
+      where: { slug: 'cotexa-internal' },
+      update: {},
+      create: { nombre: 'Cotexa Internal', slug: 'cotexa-internal', email: 'admin@cotexa.com' }
+    })
+
+    await prisma.usuario.upsert({
+      where: { email: 'admin@cotexa.com' },
+      update: { role: 'SUPERADMIN', passwordHash: hashAdmin, empresaId: internalEmpresa.id },
+      create: { email: 'admin@cotexa.com', passwordHash: hashAdmin, nombre: 'Super Admin', role: 'SUPERADMIN', empresaId: internalEmpresa.id }
+    })
+
+    const demoEmpresa = await prisma.empresa.upsert({
       where: { slug: 'cotexa-demo' },
       update: {},
       create: { nombre: 'Cotexa Demo', slug: 'cotexa-demo', email: 'demo@cotexa.com' }
     })
-    await prisma.usuario.upsert({
-      where: { email: 'admin@cotexa.com' },
-      update: { role: 'SUPERADMIN', passwordHash: hashAdmin },
-      create: { email: 'admin@cotexa.com', passwordHash: hashAdmin, nombre: 'Super Admin', role: 'SUPERADMIN', empresaId: empresa.id }
-    })
+
     await prisma.usuario.upsert({
       where: { email: 'ejemplodemo@cotexa.com' },
-      update: { role: 'ADMIN', passwordHash: hashDemo },
-      create: { email: 'ejemplodemo@cotexa.com', passwordHash: hashDemo, nombre: 'Usuario Demo', role: 'ADMIN', empresaId: empresa.id }
+      update: { role: 'ADMIN', passwordHash: hashDemo, empresaId: demoEmpresa.id },
+      create: { email: 'ejemplodemo@cotexa.com', passwordHash: hashDemo, nombre: 'Usuario Demo', role: 'ADMIN', empresaId: demoEmpresa.id }
     })
+
+    const testingEmpresa = await prisma.empresa.upsert({
+      where: { slug: 'testing' },
+      update: {},
+      create: { nombre: 'Testing', slug: 'testing', email: 'testing@testing.com' }
+    })
+
+    await prisma.usuario.upsert({
+      where: { email: 'testing@testing.com' },
+      update: { role: 'ADMIN', passwordHash: hashTesting, empresaId: testingEmpresa.id },
+      create: { email: 'testing@testing.com', passwordHash: hashTesting, nombre: 'Testing User', role: 'ADMIN', empresaId: testingEmpresa.id }
+    })
+
     await (prisma.cliente as any).createMany({
       data: [
-        { empresaId: empresa.id, nombre: 'María García', email: 'maria@ejemplo.com', tipo: 'B2C', telefono: '1145001234' },
-        { empresaId: empresa.id, nombre: 'ACME S.A.', email: 'compras@acme.com', tipo: 'B2B', razonSocial: 'ACME S.A.', cuit: '30-12345678-9' }
+        { empresaId: demoEmpresa.id, nombre: 'María García', email: 'maria@ejemplo.com', tipo: 'B2C', telefono: '1145001234' },
+        { empresaId: demoEmpresa.id, nombre: 'ACME S.A.', email: 'compras@acme.com', tipo: 'B2B', razonSocial: 'ACME S.A.', cuit: '30-12345678-9' }
       ]
     })
-    res.json({ ok: true, usuarios: ['admin@cotexa.com / admin123 (SUPERADMIN)', 'ejemplodemo@cotexa.com / demo123 (ADMIN)'] })
+    res.json({ ok: true, usuarios: [
+      'admin@cotexa.com / admin123 (SUPERADMIN)',
+      'ejemplodemo@cotexa.com / demo123 (ADMIN)',
+      'testing@testing.com / testing123 (ADMIN)'
+    ] })
   } catch (err) {
     res.status(500).json({ error: String(err) })
   }

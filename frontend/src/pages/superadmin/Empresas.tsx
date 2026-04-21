@@ -226,7 +226,7 @@ export default function SuperAdminEmpresas() {
                   </div>
 
                   <button
-                    onClick={() => navigate(`/superadmin/usuarios?empresaId=${empresa.id}`)}
+                    onClick={() => navigate(`/superadmin/empresas/${empresa.id}`)}
                     className="w-full flex items-center justify-center gap-1.5 h-8 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-lg text-xs font-medium transition-colors"
                   >
                     <Users size={13} />
