@@ -52,6 +52,15 @@ export const notificacionesApi = {
   leerTodas: () => api.patch('/notificaciones/leer-todas'),
 }
 
+export const superadminApi = {
+  getEmpresas: () => api.get('/superadmin/empresas'),
+  createEmpresa: (data: any) => api.post('/superadmin/empresas', data),
+  updateEmpresa: (id: number, data: any) => api.patch(`/superadmin/empresas/${id}`, data),
+  getUsuarios: () => api.get('/superadmin/usuarios'),
+  createUsuario: (data: any) => api.post('/superadmin/usuarios', data),
+  updateUsuario: (id: number, data: any) => api.patch(`/superadmin/usuarios/${id}`, data),
+}
+
 export const camposApi = {
   getAll: () => api.get('/campos'),
   create: (data: any) => api.post('/campos', data),
