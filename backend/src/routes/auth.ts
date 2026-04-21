@@ -2,7 +2,6 @@ import { Router, Request, Response } from 'express'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import { requireAuth, AuthRequest } from '../middleware/auth'
 
 const router = Router()
 const prisma = new PrismaClient()
@@ -27,7 +26,8 @@ router.post('/login', async (req: Request, res: Response) => {
 
 router.post('/seed', async (_req: Request, res: Response) => {
   try {
-    const hash = await bcrypt.hash('admin123', 10)
+    const hashAdmin = await bcrypt.hash('admin123', 10)
+    const hashDemo = await bcrypt.hash('demo123', 10)
     const empresa = await prisma.empresa.upsert({
       where: { slug: 'cotexa-demo' },
       update: {},
@@ -35,8 +35,13 @@ router.post('/seed', async (_req: Request, res: Response) => {
     })
     await prisma.usuario.upsert({
       where: { email: 'admin@cotexa.com' },
-      update: {},
-      create: { email: 'admin@cotexa.com', passwordHash: hash, nombre: 'Admin Demo', role: 'ADMIN', empresaId: empresa.id }
+      update: { role: 'SUPERADMIN', passwordHash: hashAdmin },
+      create: { email: 'admin@cotexa.com', passwordHash: hashAdmin, nombre: 'Super Admin', role: 'SUPERADMIN', empresaId: empresa.id }
+    })
+    await prisma.usuario.upsert({
+      where: { email: 'ejemplodemo@cotexa.com' },
+      update: { role: 'ADMIN', passwordHash: hashDemo },
+      create: { email: 'ejemplodemo@cotexa.com', passwordHash: hashDemo, nombre: 'Usuario Demo', role: 'ADMIN', empresaId: empresa.id }
     })
     await (prisma.cliente as any).createMany({
       data: [
@@ -44,15 +49,10 @@ router.post('/seed', async (_req: Request, res: Response) => {
         { empresaId: empresa.id, nombre: 'ACME S.A.', email: 'compras@acme.com', tipo: 'B2B', razonSocial: 'ACME S.A.', cuit: '30-12345678-9' }
       ]
     })
-    res.json({ ok: true, mensaje: 'admin@cotexa.com / admin123' })
+    res.json({ ok: true, usuarios: ['admin@cotexa.com / admin123 (SUPERADMIN)', 'ejemplodemo@cotexa.com / demo123 (ADMIN)'] })
   } catch (err) {
     res.status(500).json({ error: String(err) })
   }
-})
-
-router.get('/empresa', requireAuth, async (req: AuthRequest, res: Response) => {
-  const empresa = await prisma.empresa.findFirst({ where: { id: req.user!.empresaId! } })
-  res.json(empresa || {})
 })
 
 export default router
