@@ -7,8 +7,8 @@ const router = Router()
 const prisma = new PrismaClient()
 
 // Token fijo para autenticar llamadas desde n8n
-// Ponelo también como variable de entorno en Railway: WEBHOOK_SECRET=cotexa_whatsapp_2024
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'cotexa_whatsapp_2024'
+// Ponelo también como variable de entorno en Railway: WEBHOOK_SECRET=cotexa_whatsapp_2026
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'cotexa_whatsapp_2026'
 
 router.post('/pedidos/webhook', async (req: Request, res: Response) => {
   // 1. Validar token de seguridad
