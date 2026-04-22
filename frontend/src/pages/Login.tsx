@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { authApi } from '../services/api'
 import { Eye, EyeOff, CheckCircle2 } from 'lucide-react'
-import logoUrl from '../../public/imagenes/logo-cotexa-final.png'
 
 const FEATURES = [
   'Cotizaciones en tiempo real',
@@ -52,8 +51,11 @@ export default function Login() {
       {/* Left panel */}
       <div className="login-bg md:w-5/12 flex flex-col items-center justify-between p-10 md:min-h-screen">
         <div className="w-full flex flex-col items-center text-center max-w-xs mx-auto mt-4 md:mt-16">
-          <img src={logoUrl} alt="Cotexa"
-            className="h-16 md:h-20 w-auto mb-8 md:mb-12" />
+          <img
+            src="/Imagenes/logo-cotexa-final.png"
+            alt="Cotexa"
+            className="h-16 md:h-20 w-auto mb-8 md:mb-12"
+          />
           <p className="text-white text-xl md:text-2xl font-semibold leading-snug mb-3">
             De cotización a pedido,<br />sin fricción.
           </p>
