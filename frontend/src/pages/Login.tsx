@@ -54,7 +54,7 @@ export default function Login() {
           <img
             src="/Imagenes/logo-cotexa-final.png"
             alt="Cotexa"
-            className="h-46 md:h-56 w-auto mb-4 md:mb-6"
+            className="h-56 md:h-72 w-auto mb-1"
           />
           <p className="text-white text-xl md:text-2xl font-semibold leading-snug mb-3">
             De cotización a pedido,<br />sin fricción.
