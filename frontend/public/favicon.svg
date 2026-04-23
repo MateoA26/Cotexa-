@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Background -->
+  <rect width="32" height="32" rx="7" fill="#0a1628"/>
+  <!-- C shape -->
+  <path d="M26 8 L12 8 C8 8 5 11.5 5 16 C5 20.5 8 24 12 24 L26 24 L26 20 L13 20 C11 20 9.5 18.3 9.5 16 C9.5 13.7 11 12 13 12 L26 12 Z" fill="#0ea5e9"/>
+  <!-- Checkmark -->
+  <polyline points="12.5,16 15.5,19 21,13" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
