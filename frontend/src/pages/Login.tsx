@@ -178,7 +178,7 @@ export default function Login() {
               </span>
             </h2>
             <p className="text-sky-300/85 text-sm mb-9">
-              Gestión integral para tu negocio de packaging
+              Cotizá, gestioná pedidos y controlá tu operación en un solo lugar
             </p>
 
             <div className="w-full space-y-3 text-left">
