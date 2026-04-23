@@ -22,7 +22,9 @@ api.interceptors.response.use(
 
 export const authApi = {
   login: (email: string, password: string) => api.post('/auth/login', { email, password }),
-  seed: () => api.post('/auth/seed')
+  seed: () => api.post('/auth/seed'),
+  cambiarPassword: (passwordActual: string, passwordNuevo: string) =>
+    api.patch('/auth/cambiar-password', { passwordActual, passwordNuevo }),
 }
 
 export const empresaApi = {

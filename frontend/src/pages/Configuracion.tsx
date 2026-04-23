@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { camposApi, empresaApi } from '../services/api'
+import { camposApi, empresaApi, authApi } from '../services/api'
 import { CampoCustom } from '../types'
 import { useAuth } from '../context/AuthContext'
 import { Plus, Trash2, Edit2, Check, X, AlertTriangle, Info, CheckCircle2 } from 'lucide-react'
@@ -54,6 +54,10 @@ export default function Configuracion() {
   const [empresaForm, setEmpresaForm] = useState({ nombre: '', email: '' })
   const [savedOk, setSavedOk] = useState(false)
 
+  const [passForm, setPassForm] = useState({ actual: '', nuevo: '', confirmar: '' })
+  const [passError, setPassError] = useState('')
+  const [passOk, setPassOk] = useState(false)
+
   const { data: empresa } = useQuery({
     queryKey: ['empresa'],
     queryFn: () => empresaApi.get().then(r => r.data),
@@ -71,6 +75,26 @@ export default function Configuracion() {
       setTimeout(() => setSavedOk(false), 3000)
     },
   })
+
+  const changePassMut = useMutation({
+    mutationFn: () => authApi.cambiarPassword(passForm.actual, passForm.nuevo),
+    onSuccess: () => {
+      setPassOk(true)
+      setPassForm({ actual: '', nuevo: '', confirmar: '' })
+      setPassError('')
+      setTimeout(() => setPassOk(false), 3000)
+    },
+    onError: (err: any) => {
+      setPassError(err.response?.data?.error || 'Error al cambiar la contraseña')
+    }
+  })
+
+  const handleChangePass = () => {
+    setPassError('')
+    if (passForm.nuevo !== passForm.confirmar) return setPassError('Las contraseñas no coinciden')
+    if (passForm.nuevo.length < 6) return setPassError('Mínimo 6 caracteres')
+    changePassMut.mutate()
+  }
 
   const { data: campos = [], isLoading } = useQuery<CampoCustom[]>({
     queryKey: ['campos'],
@@ -144,6 +168,71 @@ export default function Configuracion() {
         <p className="text-sm text-gray-400 mt-0.5">Administrá los datos y opciones del cotizador</p>
       </div>
 
+      {/* Mi perfil */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4">
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Mi perfil</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+          <div>
+            <label className={lc}>Nombre</label>
+            <input value={user?.nombre || ''} disabled className={ic + ' bg-gray-50 text-gray-500 cursor-not-allowed'} />
+          </div>
+          <div>
+            <label className={lc}>Email</label>
+            <input value={user?.email || ''} disabled className={ic + ' bg-gray-50 text-gray-500 cursor-not-allowed'} />
+          </div>
+        </div>
+
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Cambiar contraseña</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+          <div>
+            <label className={lc}>Contraseña actual</label>
+            <input
+              type="password"
+              value={passForm.actual}
+              onChange={e => setPassForm(p => ({ ...p, actual: e.target.value }))}
+              className={ic}
+              placeholder="••••••••"
+            />
+          </div>
+          <div>
+            <label className={lc}>Nueva contraseña</label>
+            <input
+              type="password"
+              value={passForm.nuevo}
+              onChange={e => setPassForm(p => ({ ...p, nuevo: e.target.value }))}
+              className={ic}
+              placeholder="••••••••"
+            />
+          </div>
+          <div>
+            <label className={lc}>Confirmar contraseña</label>
+            <input
+              type="password"
+              value={passForm.confirmar}
+              onChange={e => setPassForm(p => ({ ...p, confirmar: e.target.value }))}
+              className={ic}
+              placeholder="••••••••"
+            />
+          </div>
+        </div>
+        {passError && <p className="text-sm text-red-500 mb-3">{passError}</p>}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleChangePass}
+            disabled={!passForm.actual || !passForm.nuevo || !passForm.confirmar || changePassMut.isPending}
+            className="h-9 px-4 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-40"
+          >
+            {changePassMut.isPending ? 'Guardando...' : 'Cambiar contraseña'}
+          </button>
+          {passOk && (
+            <span className="flex items-center gap-1.5 text-sm text-emerald-600">
+              <CheckCircle2 size={15} />
+              Contraseña actualizada
+            </span>
+          )}
+        </div>
+      </div>
+
       {/* Datos del negocio */}
       <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Datos del negocio</p>
@@ -199,7 +288,6 @@ export default function Configuracion() {
           Los campos aparecen en el formulario de cotización y afectan el precio según su configuración.
         </p>
 
-        {/* New campo form */}
         {showNuevo && (
           <div className="border border-sky-200 bg-sky-50/40 rounded-xl p-4 mb-4">
             <p className="text-sm font-semibold text-gray-800 mb-4">Nuevo campo personalizado</p>
@@ -294,7 +382,6 @@ export default function Configuracion() {
                   editingId === campo.id ? 'border-sky-200 bg-sky-50/20' : 'border-gray-100'
                 }`}
               >
-                {/* Delete confirmation overlay */}
                 {confirmDelete === campo.id ? (
                   <div className="p-4">
                     <div className="flex items-start gap-3">

@@ -27,6 +27,23 @@ router.patch('/empresa/me', requireAuth, async (req: AuthRequest, res: Response)
   res.json(empresa)
 })
 
+router.patch('/cambiar-password', requireAuth, async (req: AuthRequest, res: Response) => {
+  const { passwordActual, passwordNuevo } = req.body
+  if (!passwordActual || !passwordNuevo) return res.status(400).json({ error: 'Faltan datos' })
+  if (passwordNuevo.length < 6) return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' })
+  try {
+    const user = await prisma.usuario.findUnique({ where: { id: req.user!.id } })
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' })
+    const valid = await bcrypt.compare(passwordActual, user.passwordHash)
+    if (!valid) return res.status(401).json({ error: 'Contraseña actual incorrecta' })
+    const hash = await bcrypt.hash(passwordNuevo, 10)
+    await prisma.usuario.update({ where: { id: user.id }, data: { passwordHash: hash } })
+    res.json({ ok: true })
+  } catch (err) {
+    res.status(500).json({ error: 'Error del servidor' })
+  }
+})
+
 router.post('/login', async (req: Request, res: Response) => {
   const { email, password } = req.body
   try {
