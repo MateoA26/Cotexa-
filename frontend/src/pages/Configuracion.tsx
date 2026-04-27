@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { camposApi, empresaApi, authApi } from '../services/api'
+import { camposApi, empresaApi, authApi, preciosApi } from '../services/api'
 import { CampoCustom } from '../types'
 import { useAuth } from '../context/AuthContext'
 import { Plus, Trash2, Edit2, Check, X, AlertTriangle, Info, CheckCircle2 } from 'lucide-react'
+
+interface Material { id: number; nombre: string; precioUnitario: number }
+interface TramoDescuento { id: number; desdeUnidades: number; porcentaje: number }
 
 const TIPOS_CAMPO = ['BOOLEAN', 'SELECT', 'NUMBER'] as const
 const IMPACTO_TIPOS = ['PORCENTAJE', 'FIJO', 'POR_UNIDAD'] as const
@@ -150,6 +153,92 @@ export default function Configuracion() {
     createMut.mutate(data)
   }
 
+  // ── Precios ───────────────────────────────────────────────
+  const [precioBaseInput, setPrecioBaseInput] = useState('0')
+  const [configSavedOk, setConfigSavedOk] = useState(false)
+
+  const [showCreateMat, setShowCreateMat] = useState(false)
+  const [createMatForm, setCreateMatForm] = useState({ nombre: '', precioUnitario: '0' })
+  const [editMatId, setEditMatId] = useState<number | null>(null)
+  const [editMatForm, setEditMatForm] = useState({ nombre: '', precioUnitario: '0' })
+
+  const [showCreateTramo, setShowCreateTramo] = useState(false)
+  const [createTramoForm, setCreateTramoForm] = useState({ desdeUnidades: '', porcentaje: '' })
+  const [editTramoId, setEditTramoId] = useState<number | null>(null)
+  const [editTramoForm, setEditTramoForm] = useState({ desdeUnidades: '', porcentaje: '' })
+
+  const { data: precioConfig } = useQuery({
+    queryKey: ['precio-config'],
+    queryFn: () => preciosApi.getConfig().then(r => r.data),
+  })
+
+  const { data: materiales = [] } = useQuery<Material[]>({
+    queryKey: ['materiales'],
+    queryFn: () => preciosApi.getMateriales().then(r => r.data),
+  })
+
+  const { data: tramos = [] } = useQuery<TramoDescuento[]>({
+    queryKey: ['tramos'],
+    queryFn: () => preciosApi.getTramos().then(r => r.data),
+  })
+
+  useEffect(() => {
+    if (precioConfig !== undefined) setPrecioBaseInput(String(precioConfig.precioBase ?? 0))
+  }, [precioConfig])
+
+  const updateConfigMut = useMutation({
+    mutationFn: (data: { precioBase: number }) => preciosApi.updateConfig(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['precio-config'] })
+      setConfigSavedOk(true)
+      setTimeout(() => setConfigSavedOk(false), 3000)
+    },
+  })
+
+  const createMatMut = useMutation({
+    mutationFn: (data: any) => preciosApi.createMaterial(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['materiales'] })
+      setShowCreateMat(false)
+      setCreateMatForm({ nombre: '', precioUnitario: '0' })
+    },
+  })
+
+  const updateMatMut = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => preciosApi.updateMaterial(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['materiales'] })
+      setEditMatId(null)
+    },
+  })
+
+  const deleteMatMut = useMutation({
+    mutationFn: (id: number) => preciosApi.deleteMaterial(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['materiales'] }),
+  })
+
+  const createTramoMut = useMutation({
+    mutationFn: (data: any) => preciosApi.createTramo(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tramos'] })
+      setShowCreateTramo(false)
+      setCreateTramoForm({ desdeUnidades: '', porcentaje: '' })
+    },
+  })
+
+  const updateTramoMut = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => preciosApi.updateTramo(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tramos'] })
+      setEditTramoId(null)
+    },
+  })
+
+  const deleteTramoMut = useMutation({
+    mutationFn: (id: number) => preciosApi.deleteTramo(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tramos'] }),
+  })
+
   const ic = 'w-full h-10 px-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500'
   const lc = 'block text-xs font-medium text-gray-600 mb-1'
 
@@ -268,6 +357,254 @@ export default function Configuracion() {
               <CheckCircle2 size={15} />
               Datos actualizados correctamente
             </span>
+          )}
+        </div>
+      </div>
+
+      {/* Precios base */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4">
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-5">Precios base</p>
+
+        {/* Precio base */}
+        <div className="mb-6">
+          <p className="text-sm font-medium text-gray-700 mb-3">Precio base por cotización</p>
+          <div className="flex items-end gap-3 flex-wrap">
+            <div>
+              <label className={lc}>Monto base ($)</label>
+              <input
+                type="number" min="0" step="0.01"
+                value={precioBaseInput}
+                onChange={e => setPrecioBaseInput(e.target.value)}
+                className={ic + ' w-40'}
+              />
+            </div>
+            <button
+              onClick={() => updateConfigMut.mutate({ precioBase: Number(precioBaseInput) })}
+              disabled={updateConfigMut.isPending}
+              className="h-10 px-4 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-40"
+            >
+              {updateConfigMut.isPending ? 'Guardando...' : 'Guardar'}
+            </button>
+            {configSavedOk && (
+              <span className="flex items-center gap-1.5 text-sm text-emerald-600">
+                <CheckCircle2 size={15} />
+                Guardado
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-gray-400 mt-1.5">Costo fijo que se suma a todas las cotizaciones antes del material y opciones.</p>
+        </div>
+
+        {/* Materiales */}
+        <div className="border-t border-gray-100 pt-5 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-medium text-gray-700">Materiales</p>
+            <button
+              onClick={() => setShowCreateMat(s => !s)}
+              className="flex items-center gap-1.5 h-8 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-xs font-medium transition-colors"
+            >
+              <Plus size={13} />
+              Agregar
+            </button>
+          </div>
+
+          {showCreateMat && (
+            <div className="border border-sky-200 bg-sky-50/40 rounded-xl p-4 mb-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label className={lc}>Nombre *</label>
+                  <input
+                    value={createMatForm.nombre}
+                    onChange={e => setCreateMatForm(p => ({ ...p, nombre: e.target.value }))}
+                    placeholder="Cartón corrugado"
+                    className={ic}
+                  />
+                </div>
+                <div>
+                  <label className={lc}>Precio por unidad ($)</label>
+                  <input
+                    type="number" min="0" step="0.01"
+                    value={createMatForm.precioUnitario}
+                    onChange={e => setCreateMatForm(p => ({ ...p, precioUnitario: e.target.value }))}
+                    className={ic}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => createMatMut.mutate({ nombre: createMatForm.nombre, precioUnitario: Number(createMatForm.precioUnitario) })}
+                  disabled={!createMatForm.nombre || createMatMut.isPending}
+                  className="h-8 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-40"
+                >
+                  {createMatMut.isPending ? 'Creando...' : 'Crear material'}
+                </button>
+                <button onClick={() => setShowCreateMat(false)} className="h-8 px-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-lg text-xs font-medium transition-colors">
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+
+          {materiales.length === 0 && !showCreateMat ? (
+            <p className="text-sm text-gray-400 py-1">No hay materiales configurados</p>
+          ) : (
+            <div className="space-y-2">
+              {materiales.map(mat => (
+                <div key={mat.id} className={`border rounded-xl transition-colors ${editMatId === mat.id ? 'border-sky-200 bg-sky-50/20' : 'border-gray-100'}`}>
+                  {editMatId === mat.id ? (
+                    <div className="p-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                        <div>
+                          <label className={lc}>Nombre</label>
+                          <input value={editMatForm.nombre} onChange={e => setEditMatForm(p => ({ ...p, nombre: e.target.value }))} className={ic} />
+                        </div>
+                        <div>
+                          <label className={lc}>Precio por unidad ($)</label>
+                          <input type="number" min="0" step="0.01" value={editMatForm.precioUnitario} onChange={e => setEditMatForm(p => ({ ...p, precioUnitario: e.target.value }))} className={ic} />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => updateMatMut.mutate({ id: mat.id, data: { nombre: editMatForm.nombre, precioUnitario: Number(editMatForm.precioUnitario) } })}
+                          disabled={updateMatMut.isPending}
+                          className="flex items-center gap-1.5 h-8 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-40"
+                        >
+                          <Check size={13} />
+                          Guardar
+                        </button>
+                        <button onClick={() => setEditMatId(null)} className="flex items-center gap-1.5 h-8 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-medium transition-colors">
+                          <X size={13} />
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-3 px-4 py-3">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{mat.nombre}</p>
+                        <p className="text-xs text-gray-400">${mat.precioUnitario.toLocaleString('es-AR')} / unidad</p>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button onClick={() => { setEditMatId(mat.id); setEditMatForm({ nombre: mat.nombre, precioUnitario: String(mat.precioUnitario) }) }} className="p-1.5 text-gray-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors">
+                          <Edit2 size={14} />
+                        </button>
+                        <button onClick={() => deleteMatMut.mutate(mat.id)} disabled={deleteMatMut.isPending} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Tramos de descuento */}
+        <div className="border-t border-gray-100 pt-5">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-medium text-gray-700">Descuentos por volumen</p>
+            <button
+              onClick={() => setShowCreateTramo(s => !s)}
+              className="flex items-center gap-1.5 h-8 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-xs font-medium transition-colors"
+            >
+              <Plus size={13} />
+              Agregar tramo
+            </button>
+          </div>
+
+          {showCreateTramo && (
+            <div className="border border-sky-200 bg-sky-50/40 rounded-xl p-4 mb-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label className={lc}>Desde (unidades) *</label>
+                  <input
+                    type="number" min="1"
+                    value={createTramoForm.desdeUnidades}
+                    onChange={e => setCreateTramoForm(p => ({ ...p, desdeUnidades: e.target.value }))}
+                    placeholder="1000"
+                    className={ic}
+                  />
+                </div>
+                <div>
+                  <label className={lc}>Descuento (%)</label>
+                  <input
+                    type="number" min="0" max="100" step="0.1"
+                    value={createTramoForm.porcentaje}
+                    onChange={e => setCreateTramoForm(p => ({ ...p, porcentaje: e.target.value }))}
+                    placeholder="10"
+                    className={ic}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => createTramoMut.mutate({ desdeUnidades: Number(createTramoForm.desdeUnidades), porcentaje: Number(createTramoForm.porcentaje) })}
+                  disabled={!createTramoForm.desdeUnidades || !createTramoForm.porcentaje || createTramoMut.isPending}
+                  className="h-8 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-40"
+                >
+                  {createTramoMut.isPending ? 'Creando...' : 'Crear tramo'}
+                </button>
+                <button onClick={() => setShowCreateTramo(false)} className="h-8 px-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-lg text-xs font-medium transition-colors">
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+
+          {tramos.length === 0 && !showCreateTramo ? (
+            <p className="text-sm text-gray-400 py-1">No hay tramos configurados</p>
+          ) : (
+            <div className="space-y-2">
+              {tramos.map(tramo => (
+                <div key={tramo.id} className={`border rounded-xl transition-colors ${editTramoId === tramo.id ? 'border-sky-200 bg-sky-50/20' : 'border-gray-100'}`}>
+                  {editTramoId === tramo.id ? (
+                    <div className="p-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                        <div>
+                          <label className={lc}>Desde (unidades)</label>
+                          <input type="number" min="1" value={editTramoForm.desdeUnidades} onChange={e => setEditTramoForm(p => ({ ...p, desdeUnidades: e.target.value }))} className={ic} />
+                        </div>
+                        <div>
+                          <label className={lc}>Descuento (%)</label>
+                          <input type="number" min="0" max="100" step="0.1" value={editTramoForm.porcentaje} onChange={e => setEditTramoForm(p => ({ ...p, porcentaje: e.target.value }))} className={ic} />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => updateTramoMut.mutate({ id: tramo.id, data: { desdeUnidades: Number(editTramoForm.desdeUnidades), porcentaje: Number(editTramoForm.porcentaje) } })}
+                          disabled={updateTramoMut.isPending}
+                          className="flex items-center gap-1.5 h-8 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-40"
+                        >
+                          <Check size={13} />
+                          Guardar
+                        </button>
+                        <button onClick={() => setEditTramoId(null)} className="flex items-center gap-1.5 h-8 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-medium transition-colors">
+                          <X size={13} />
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-3 px-4 py-3">
+                      <p className="text-sm text-gray-700">
+                        A partir de <span className="font-semibold">{tramo.desdeUnidades.toLocaleString('es-AR')} u.</span>
+                        {' → '}
+                        <span className="font-semibold text-emerald-600">{tramo.porcentaje}% de descuento</span>
+                      </p>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button onClick={() => { setEditTramoId(tramo.id); setEditTramoForm({ desdeUnidades: String(tramo.desdeUnidades), porcentaje: String(tramo.porcentaje) }) }} className="p-1.5 text-gray-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors">
+                          <Edit2 size={14} />
+                        </button>
+                        <button onClick={() => deleteTramoMut.mutate(tramo.id)} disabled={deleteTramoMut.isPending} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </div>

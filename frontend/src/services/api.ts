@@ -67,6 +67,19 @@ export const superadminApi = {
   updateEmpresaUsuario: (empresaId: number, userId: number, data: any) => api.patch(`/superadmin/empresas/${empresaId}/usuarios/${userId}`, data),
 }
 
+export const preciosApi = {
+  getConfig: () => api.get('/precios/config'),
+  updateConfig: (data: { precioBase: number }) => api.patch('/precios/config', data),
+  getMateriales: () => api.get('/precios/materiales'),
+  createMaterial: (data: { nombre: string; precioUnitario: number }) => api.post('/precios/materiales', data),
+  updateMaterial: (id: number, data: any) => api.patch(`/precios/materiales/${id}`, data),
+  deleteMaterial: (id: number) => api.delete(`/precios/materiales/${id}`),
+  getTramos: () => api.get('/precios/tramos'),
+  createTramo: (data: { desdeUnidades: number; porcentaje: number }) => api.post('/precios/tramos', data),
+  updateTramo: (id: number, data: any) => api.patch(`/precios/tramos/${id}`, data),
+  deleteTramo: (id: number) => api.delete(`/precios/tramos/${id}`),
+}
+
 export const camposApi = {
   getAll: () => api.get('/campos'),
   create: (data: any) => api.post('/campos', data),

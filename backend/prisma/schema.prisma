@@ -21,6 +21,9 @@ model Empresa {
   pedidos        Pedido[]
   campos         CampoCustom[]
   notificaciones Notificacion[]
+  precioConfig   PrecioConfig?
+  materiales     Material[]
+  tramos         TramoDescuento[]
 }
 
 model Notificacion {
@@ -75,6 +78,7 @@ model Pedido {
   alto         Float?
   material     String?
   impresion    String?
+  materialId   Int?
   cantidad     Int?
   notasCliente String?
   notasAdmin   String?
@@ -86,6 +90,7 @@ model Pedido {
 
   empresa       Empresa          @relation(fields: [empresaId], references: [id])
   cliente       Cliente          @relation(fields: [clienteId], references: [id])
+  materialRel   Material?        @relation(fields: [materialId], references: [id])
   eventos       EventoTracking[]
   valoresCampos ValorCampo[]
   notificaciones Notificacion[]
@@ -114,6 +119,31 @@ model CampoCustom {
 
   empresa Empresa      @relation(fields: [empresaId], references: [id])
   valores ValorCampo[]
+}
+
+model PrecioConfig {
+  id         Int     @id @default(autoincrement())
+  empresaId  Int     @unique
+  precioBase Float   @default(0)
+  empresa    Empresa @relation(fields: [empresaId], references: [id])
+}
+
+model Material {
+  id             Int      @id @default(autoincrement())
+  empresaId      Int
+  nombre         String
+  precioUnitario Float    @default(0)
+  activo         Boolean  @default(true)
+  empresa        Empresa  @relation(fields: [empresaId], references: [id])
+  pedidos        Pedido[]
+}
+
+model TramoDescuento {
+  id            Int     @id @default(autoincrement())
+  empresaId     Int
+  desdeUnidades Int
+  porcentaje    Float
+  empresa       Empresa @relation(fields: [empresaId], references: [id])
 }
 
 model ValorCampo {

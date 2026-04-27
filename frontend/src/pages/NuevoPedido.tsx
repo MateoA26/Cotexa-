@@ -1,42 +1,39 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { clientesApi, pedidosApi, camposApi } from '../services/api'
+import { clientesApi, pedidosApi, camposApi, preciosApi } from '../services/api'
 import { Cliente, CampoCustom } from '../types'
 import { ArrowLeft, Calculator, Save, CheckCircle } from 'lucide-react'
 
-const PRECIO_BASE = 150
-const MATERIALES = ['Cartón corrugado', 'Cartón microcorrugado', 'Kraft', 'Cartulina', 'Otro']
-const IMPRESIONES = [
-  { value: 'sin_impresion', label: 'Sin impresión', recargo: 0 },
-  { value: 'un_color', label: 'Un color', recargo: 0.15 },
-  { value: 'full_color', label: 'Full color', recargo: 0.35 },
-]
-const DESCUENTOS = [
-  { desde: 5000, desc: 0.20 },
-  { desde: 1000, desc: 0.15 },
-  { desde: 500, desc: 0.10 },
-  { desde: 250, desc: 0.05 }
-]
+interface Material {
+  id: number
+  nombre: string
+  precioUnitario: number
+}
+
+interface TramoDescuento {
+  id: number
+  desdeUnidades: number
+  porcentaje: number
+}
 
 type BreakdownItem = { label: string; delta: number }
 
 function calcularPrecio(
   campos: CampoCustom[],
-  impresion: string,
   cantidad: number,
-  valoresCampos: Record<number, string>
-): { unitario: number; total: number; descuento: number; breakdown: BreakdownItem[] } {
+  valoresCampos: Record<number, string>,
+  precioBase: number,
+  materialPrecioUnitario: number,
+  tramos: TramoDescuento[]
+): { unitario: number; total: number; descuentoPct: number; breakdown: BreakdownItem[] } {
   const breakdown: BreakdownItem[] = []
-  breakdown.push({ label: 'Precio base', delta: PRECIO_BASE })
-  let precio = PRECIO_BASE
+  breakdown.push({ label: 'Precio base', delta: precioBase })
+  let precio = precioBase
 
-  const recImp = IMPRESIONES.find(i => i.value === impresion)?.recargo || 0
-  if (recImp > 0) {
-    const label = IMPRESIONES.find(i => i.value === impresion)!.label
-    const delta = Math.round(precio * recImp)
-    precio = precio * (1 + recImp)
-    breakdown.push({ label: `${label} (+${recImp * 100}%)`, delta })
+  if (materialPrecioUnitario > 0) {
+    breakdown.push({ label: 'Material', delta: materialPrecioUnitario })
+    precio += materialPrecioUnitario
   }
 
   campos.forEach(c => {
@@ -58,15 +55,17 @@ function calcularPrecio(
     }
   })
 
-  const descObj = DESCUENTOS.find(d => cantidad >= d.desde)
-  const descuento = descObj?.desc || 0
-  if (descuento > 0) {
-    const delta = -Math.round(precio * descuento)
-    breakdown.push({ label: `Descuento volumen (-${descuento * 100}%)`, delta })
-    precio = precio * (1 - descuento)
+  const tramo = [...tramos]
+    .sort((a, b) => b.desdeUnidades - a.desdeUnidades)
+    .find(t => cantidad >= t.desdeUnidades)
+  const descuentoPct = tramo?.porcentaje || 0
+  if (descuentoPct > 0) {
+    const delta = -Math.round(precio * descuentoPct / 100)
+    breakdown.push({ label: `Descuento volumen (-${descuentoPct}%)`, delta })
+    precio = precio * (1 - descuentoPct / 100)
   }
 
-  return { unitario: Math.round(precio), total: Math.round(precio * cantidad), descuento, breakdown }
+  return { unitario: Math.round(precio), total: Math.round(precio * cantidad), descuentoPct, breakdown }
 }
 
 export default function NuevoPedido() {
@@ -75,16 +74,15 @@ export default function NuevoPedido() {
   const [largo, setLargo] = useState('')
   const [ancho, setAncho] = useState('')
   const [alto, setAlto] = useState('')
-  const [material, setMaterial] = useState(MATERIALES[0])
-  const [impresion, setImpresion] = useState('sin_impresion')
+  const [materialId, setMaterialId] = useState('')
   const [cantidad, setCantidad] = useState('100')
   const [notasCliente, setNotasCliente] = useState('')
   const [entregaEst, setEntregaEst] = useState('')
   const [valoresCampos, setValoresCampos] = useState<Record<number, string>>({})
-  const [precioUnitario, setPrecioUnitario] = useState(PRECIO_BASE)
-  const [precioTotal, setPrecioTotal] = useState(PRECIO_BASE * 100)
-  const [descuentoAplicado, setDescuentoAplicado] = useState(0)
-  const [breakdown, setBreakdown] = useState<BreakdownItem[]>([{ label: 'Precio base', delta: PRECIO_BASE }])
+  const [precioUnitario, setPrecioUnitario] = useState(0)
+  const [precioTotal, setPrecioTotal] = useState(0)
+  const [descuentoPct, setDescuentoPct] = useState(0)
+  const [breakdown, setBreakdown] = useState<BreakdownItem[]>([])
 
   const { data: clientes = [] } = useQuery<Cliente[]>({
     queryKey: ['clientes'],
@@ -96,17 +94,35 @@ export default function NuevoPedido() {
     queryFn: () => camposApi.getAll().then(r => r.data)
   })
 
+  const { data: precioConfig } = useQuery({
+    queryKey: ['precio-config'],
+    queryFn: () => preciosApi.getConfig().then(r => r.data)
+  })
+
+  const { data: materiales = [] } = useQuery<Material[]>({
+    queryKey: ['materiales'],
+    queryFn: () => preciosApi.getMateriales().then(r => r.data)
+  })
+
+  const { data: tramos = [] } = useQuery<TramoDescuento[]>({
+    queryKey: ['tramos'],
+    queryFn: () => preciosApi.getTramos().then(r => r.data)
+  })
+
+  const selectedMaterial = materiales.find(m => String(m.id) === materialId) || null
+
   const mutation = useMutation({
     mutationFn: (estado: string) => pedidosApi.create({
       clienteId: Number(clienteId),
       largo: largo ? Number(largo) : null,
       ancho: ancho ? Number(ancho) : null,
       alto: alto ? Number(alto) : null,
-      material, impresion,
+      material: selectedMaterial?.nombre || null,
+      materialId: selectedMaterial?.id || null,
       cantidad: Number(cantidad),
       notasCliente: notasCliente || null,
       entregaEst: entregaEst || null,
-      precioBase: PRECIO_BASE,
+      precioBase: precioConfig?.precioBase || 0,
       precioTotal,
       estado,
       valoresCampos: Object.entries(valoresCampos)
@@ -118,12 +134,14 @@ export default function NuevoPedido() {
 
   useEffect(() => {
     const cant = Number(cantidad) || 0
-    const result = calcularPrecio(campos, impresion, cant, valoresCampos)
-    setDescuentoAplicado(result.descuento)
+    const base = precioConfig?.precioBase || 0
+    const matPrecio = selectedMaterial?.precioUnitario || 0
+    const result = calcularPrecio(campos, cant, valoresCampos, base, matPrecio, tramos)
+    setDescuentoPct(result.descuentoPct)
     setPrecioUnitario(result.unitario)
     setPrecioTotal(result.total)
     setBreakdown(result.breakdown)
-  }, [cantidad, impresion, valoresCampos, campos])
+  }, [cantidad, materialId, valoresCampos, campos, precioConfig, materiales, tramos, selectedMaterial])
 
   const ic = "w-full h-11 px-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
   const lc = "block text-xs font-medium text-gray-500 mb-1.5"
@@ -144,6 +162,8 @@ export default function NuevoPedido() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2 space-y-4">
+
+          {/* Cliente */}
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Cliente</p>
             <label className={lc}>Seleccionar cliente *</label>
@@ -157,6 +177,7 @@ export default function NuevoPedido() {
             </select>
           </div>
 
+          {/* Especificaciones */}
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Especificaciones</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
@@ -172,36 +193,33 @@ export default function NuevoPedido() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div>
                 <label className={lc}>Material</label>
-                <select value={material} onChange={e => setMaterial(e.target.value)} className={ic}>
-                  {MATERIALES.map(m => <option key={m}>{m}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className={lc}>Impresión</label>
-                <select value={impresion} onChange={e => setImpresion(e.target.value)} className={ic}>
-                  {IMPRESIONES.map(i => (
-                    <option key={i.value} value={i.value}>
-                      {i.label}{i.recargo ? ` (+${i.recargo * 100}%)` : ''}
+                <select value={materialId} onChange={e => setMaterialId(e.target.value)} className={ic}>
+                  <option value="">— Sin material —</option>
+                  {materiales.map(m => (
+                    <option key={m.id} value={m.id}>
+                      {m.nombre}{m.precioUnitario > 0 ? ` (+$${m.precioUnitario}/u)` : ''}
                     </option>
                   ))}
                 </select>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className={lc}>Cantidad de unidades</label>
-                <input type="number" value={cantidad} onChange={e => setCantidad(e.target.value)} min="1" className={ic} />
-                {descuentoAplicado > 0 && (
-                  <p className="text-xs text-emerald-600 mt-1">✓ Descuento por volumen: -{descuentoAplicado * 100}%</p>
+                {materiales.length === 0 && (
+                  <p className="text-xs text-gray-400 mt-1">Configurá materiales en Configuración →</p>
                 )}
               </div>
               <div>
-                <label className={lc}>Entrega estimada</label>
-                <input type="date" value={entregaEst} onChange={e => setEntregaEst(e.target.value)} className={ic} />
+                <label className={lc}>Cantidad de unidades</label>
+                <input type="number" value={cantidad} onChange={e => setCantidad(e.target.value)} min="1" className={ic} />
+                {descuentoPct > 0 && (
+                  <p className="text-xs text-emerald-600 mt-1">✓ Descuento por volumen: -{descuentoPct}%</p>
+                )}
               </div>
+            </div>
+            <div>
+              <label className={lc}>Entrega estimada</label>
+              <input type="date" value={entregaEst} onChange={e => setEntregaEst(e.target.value)} className={`${ic} max-w-xs`} />
             </div>
           </div>
 
+          {/* Campos custom */}
           {campos.length > 0 && (
             <div className="bg-white rounded-xl border border-gray-200 p-5">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Opciones adicionales</p>
@@ -235,6 +253,7 @@ export default function NuevoPedido() {
             </div>
           )}
 
+          {/* Notas */}
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <label className={lc}>Notas del pedido</label>
             <textarea value={notasCliente} onChange={e => setNotasCliente(e.target.value)}
@@ -243,6 +262,7 @@ export default function NuevoPedido() {
           </div>
         </div>
 
+        {/* Cotización en tiempo real */}
         <div>
           <div className="bg-white rounded-xl border border-gray-200 p-5 lg:sticky lg:top-6">
             <div className="flex items-center gap-2 mb-5">
@@ -251,19 +271,23 @@ export default function NuevoPedido() {
             </div>
 
             <div className="mb-5">
-              <div className="space-y-1.5 mb-3">
-                {breakdown.map((item, i) => (
-                  <div key={i} className="flex justify-between text-sm">
-                    <span className={item.delta < 0 ? 'text-emerald-600' : i === 0 ? 'text-gray-500' : 'text-gray-400'}>
-                      {i > 0 && item.delta >= 0 ? '+ ' : ''}{item.label}
-                    </span>
-                    <span className={`font-medium ${item.delta < 0 ? 'text-emerald-600' : i === 0 ? 'text-gray-700' : 'text-gray-700'}`}>
-                      {item.delta < 0 ? '-' : i > 0 ? '+' : ''}${Math.abs(item.delta).toLocaleString('es-AR')}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <div className="border-t border-gray-100 pt-2.5 space-y-1.5">
+              {breakdown.length > 0 ? (
+                <div className="space-y-1.5 mb-3">
+                  {breakdown.map((item, i) => (
+                    <div key={i} className="flex justify-between text-sm">
+                      <span className={item.delta < 0 ? 'text-emerald-600' : i === 0 ? 'text-gray-500' : 'text-gray-400'}>
+                        {i > 0 && item.delta >= 0 ? '+ ' : ''}{item.label}
+                      </span>
+                      <span className={`font-medium ${item.delta < 0 ? 'text-emerald-600' : 'text-gray-700'}`}>
+                        {item.delta < 0 ? '-' : i > 0 ? '+' : ''}${Math.abs(item.delta).toLocaleString('es-AR')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400 mb-3">Configurá el precio base en Configuración para ver el desglose</p>
+              )}
+              <div className="border-t border-gray-100 pt-2.5 space-y-1">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Precio unitario</span>
                   <span className="font-semibold text-gray-900">${precioUnitario.toLocaleString('es-AR')}/u</span>

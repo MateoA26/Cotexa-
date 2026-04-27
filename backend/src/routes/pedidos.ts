@@ -35,7 +35,7 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
 
 router.post('/', async (req: AuthRequest, res: Response) => {
   const {
-    clienteId, largo, ancho, alto, material, impresion,
+    clienteId, largo, ancho, alto, material, impresion, materialId,
     cantidad, notasCliente, precioBase, precioTotal,
     entregaEst, valoresCampos, estado
   } = req.body
@@ -51,6 +51,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
       alto: alto ? Number(alto) : null,
       material: material || null,
       impresion: impresion || null,
+      materialId: materialId ? Number(materialId) : null,
       cantidad: cantidad ? Number(cantidad) : null,
       notasCliente: notasCliente || null,
       precioBase: precioBase ? Number(precioBase) : null,

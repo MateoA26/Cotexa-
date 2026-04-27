@@ -9,6 +9,7 @@ import camposRoutes from './routes/campos'
 import notificacionesRoutes from './routes/notificaciones'
 import webhookRoutes from './routes/webhook'
 import superadminRoutes from './routes/superadmin'
+import preciosRoutes from './routes/precios'
 
 dotenv.config()
 const app = express()
@@ -25,6 +26,7 @@ app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/campos', camposRoutes)
 app.use('/api/notificaciones', notificacionesRoutes)
 app.use('/api/superadmin', superadminRoutes)
+app.use('/api/precios', preciosRoutes)
 
 app.listen(PORT, () => {
   console.log(`✅ Cotexa backend corriendo en http://localhost:${PORT}`)
