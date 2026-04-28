@@ -145,7 +145,7 @@ export default function Layout() {
         </header>
 
         {/* Desktop topbar */}
-        <header className="hidden md:flex items-center justify-between px-7 py-3 flex-shrink-0" style={{ background: '#0f172a' }}>
+        <header className="hidden md:flex items-center justify-between px-7 py-4 flex-shrink-0" style={{ background: '#0f172a' }}>
           <div className="relative" ref={searchRef}>
             <div className="flex items-center gap-2 px-3.5 py-2 rounded-[10px] w-[320px]"
               style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
