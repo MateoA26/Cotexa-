@@ -3,13 +3,97 @@ import { useQuery } from '@tanstack/react-query'
 import { dashboardApi, pedidosApi } from '../services/api'
 import { DashboardData, Pedido } from '../types'
 import { ESTADO_LABELS, ESTADO_COLORS } from '../utils/estados'
-import { Package, Users, TrendingUp, Clock } from 'lucide-react'
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts'
+import {
+  Package, Users, TrendingUp, Clock,
+  ArrowUpRight, ArrowDownRight,
+  FileText, CheckCircle2, Truck, XCircle,
+} from 'lucide-react'
+import {
+  PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  AreaChart, Area,
+} from 'recharts'
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+const SPARKS: Record<string, number[]> = {
+  totalPedidos:    [0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 3],
+  pedidosActivos:  [0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 2, 2],
+  totalClientes:   [1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3],
+  facturacionMes:  [120, 180, 240, 220, 310, 380, 420, 500, 560, 640, 720, 803],
+}
+
+const ESTADO_ICONS: Record<string, any> = {
+  COTIZACION: FileText,
+  CONFIRMADO: CheckCircle2,
+  EN_PRODUCCION: Package,
+  ENTREGADO: Truck,
+  CANCELADO: XCircle,
+}
+
+const AVATAR_COLORS = ['#0ea5e9', '#8b5cf6', '#f59e0b', '#10b981', '#ec4899']
+const initials = (n: string) =>
+  n.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase()
+const colorFor = (n: string) => AVATAR_COLORS[n.charCodeAt(0) % AVATAR_COLORS.length]
+
+function Sparkline({ data, color }: { data: number[]; color: string }) {
+  const id = `spark-${color.replace('#', '')}`
+  return (
+    <ResponsiveContainer width="100%" height={36}>
+      <AreaChart data={data.map((v, i) => ({ i, v }))} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+        <defs>
+          <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity={0.28} />
+            <stop offset="100%" stopColor={color} stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <Area type="monotone" dataKey="v" stroke={color} strokeWidth={1.75} fill={`url(#${id})`} dot={false} />
+      </AreaChart>
+    </ResponsiveContainer>
+  )
+}
+
+function Delta({ value, light }: { value: number; light?: boolean }) {
+  const up = value >= 0
+  const Icon = up ? ArrowUpRight : ArrowDownRight
+  const cls = light
+    ? 'text-white bg-white/20'
+    : up ? 'text-emerald-600 bg-emerald-100' : 'text-red-600 bg-red-100'
+  return (
+    <span className={`inline-flex items-center gap-0.5 text-[11px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap ${cls}`}>
+      <Icon size={10} strokeWidth={2.5} />{Math.abs(value).toFixed(1)}%
+    </span>
+  )
+}
+
+function MetricCard({ label, value, icon: Icon, tint, delta, spark }: {
+  label: string; value: string; icon: any; tint: string; delta?: number; spark: number[]
+}) {
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 p-5">
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{label}</div>
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: tint + '1a', color: tint }}>
+          <Icon size={14} strokeWidth={2.2} />
+        </div>
+      </div>
+      <div className="mt-4 flex items-baseline gap-2.5 flex-wrap">
+        <div className="text-[28px] font-bold text-slate-900 tracking-tight tabular-nums leading-none font-mono">{value}</div>
+        {delta !== undefined && <Delta value={delta} />}
+      </div>
+      <div className="mt-3.5 -mx-1.5 h-9">
+        <Sparkline data={spark} color={tint} />
+      </div>
+    </div>
+  )
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
   const { data, isLoading } = useQuery<DashboardData>({
     queryKey: ['dashboard'],
-    queryFn: () => dashboardApi.get().then(r => r.data)
+    queryFn: () => dashboardApi.get().then(r => r.data),
   })
 
   const { data: allPedidos = [] } = useQuery<Pedido[]>({
@@ -35,147 +119,201 @@ export default function Dashboard() {
     }))
   }, [allPedidos])
 
-  if (isLoading) return <div className="p-8 text-sm text-gray-400">Cargando...</div>
+  if (isLoading) return (
+    <div className="max-w-[1360px] mx-auto px-7 py-7">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-5">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="bg-white rounded-2xl border border-slate-200 p-5 h-32 animate-pulse" />
+        ))}
+      </div>
+    </div>
+  )
   if (!data) return null
 
   const diff = data.facturacionMesAnt > 0
-    ? ((data.facturacionMes - data.facturacionMesAnt) / data.facturacionMesAnt * 100).toFixed(1)
+    ? (data.facturacionMes - data.facturacionMesAnt) / data.facturacionMesAnt * 100
     : null
 
   const pieData = data.pedidosPorEstado.map(p => ({
     name: ESTADO_LABELS[p.estado] || p.estado,
     value: p._count,
-    color: ESTADO_COLORS[p.estado] || '#9ca3af'
+    color: ESTADO_COLORS[p.estado] || '#94a3b8',
+    estado: p.estado,
   }))
 
-  const metricas = [
-    { label: 'Total pedidos', value: data.totalPedidos, icon: Package, color: 'text-sky-500' },
-    { label: 'En proceso', value: data.pedidosActivos, icon: Clock, color: 'text-amber-500' },
-    { label: 'Clientes', value: data.totalClientes, icon: Users, color: 'text-violet-500' },
-    {
-      label: 'Facturación este mes',
-      value: `$${(data.facturacionMes || 0).toLocaleString('es-AR')}`,
-      icon: TrendingUp,
-      color: 'text-emerald-500',
-      sub: diff ? `${Number(diff) >= 0 ? '▲' : '▼'} ${Math.abs(Number(diff))}% vs mes anterior` : undefined
-    }
-  ]
+  const today = new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
   return (
-    <div className="p-4 md:p-6 max-w-6xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Resumen de tu operación</p>
+    <div className="max-w-[1360px] mx-auto px-7 py-7">
+
+      {/* Header */}
+      <div className="mb-7">
+        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.12em] mb-1.5">{today}</p>
+        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
+        <p className="text-sm text-slate-500 mt-1">Resumen de tu operación</p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        {metricas.map(({ label, value, icon: Icon, color, sub }) => (
-          <div key={label} className="bg-white rounded-xl border border-gray-200 p-4 md:p-5">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs text-gray-400">{label}</p>
-              <Icon size={15} className={color} />
-            </div>
-            <p className="text-xl md:text-2xl font-bold text-gray-900">{value}</p>
-            {sub && <p className={`text-xs mt-1 ${diff && Number(diff) >= 0 ? 'text-emerald-500' : 'text-red-400'}`}>{sub}</p>}
-          </div>
-        ))}
+      {/* Metric cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-5">
+        <MetricCard
+          label="Total pedidos"
+          value={String(data.totalPedidos)}
+          icon={Package}
+          tint="#0ea5e9"
+          spark={SPARKS.totalPedidos}
+        />
+        <MetricCard
+          label="En proceso"
+          value={String(data.pedidosActivos)}
+          icon={Clock}
+          tint="#f59e0b"
+          spark={SPARKS.pedidosActivos}
+        />
+        <MetricCard
+          label="Clientes"
+          value={String(data.totalClientes)}
+          icon={Users}
+          tint="#8b5cf6"
+          spark={SPARKS.totalClientes}
+        />
+        <MetricCard
+          label="Facturación del mes"
+          value={`$${(data.facturacionMes || 0).toLocaleString('es-AR')}`}
+          icon={TrendingUp}
+          tint="#10b981"
+          delta={diff !== null ? diff : undefined}
+          spark={SPARKS.facturacionMes}
+        />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100">
-            <p className="text-sm font-medium text-gray-900">Últimos pedidos</p>
+      {/* Main row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+
+        {/* Últimos pedidos */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <p className="text-sm font-semibold text-slate-900 tracking-tight">Últimos pedidos</p>
+            <span className="text-[11px] text-slate-400 font-medium">{data.ultimosPedidos.length} recientes</span>
           </div>
           {data.ultimosPedidos.length === 0 ? (
-            <div className="p-8 text-center text-sm text-gray-400">No hay pedidos todavía</div>
+            <div className="p-10 text-center text-[13px] text-slate-400">No hay pedidos todavía</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[450px]">
+              <table className="w-full min-w-[440px]">
                 <thead>
-                  <tr className="text-xs text-gray-400 border-b border-gray-50">
+                  <tr className="border-b border-slate-100">
                     {['#', 'Cliente', 'Estado', 'Total', 'Fecha'].map(h => (
-                      <th key={h} className="text-left px-5 py-3 font-normal">{h}</th>
+                      <th key={h} className="px-4 py-2.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap text-left">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {data.ultimosPedidos.map(p => (
-                    <tr key={p.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
-                      <td className="px-5 py-3.5 text-xs text-gray-400">#{p.numeroPedido}</td>
-                      <td className="px-5 py-3.5 text-sm text-gray-700 font-medium">{p.cliente.nombre}</td>
-                      <td className="px-5 py-3.5">
-                        <span className="text-xs px-2 py-0.5 rounded-full font-medium"
-                          style={{ background: ESTADO_COLORS[p.estado] + '20', color: ESTADO_COLORS[p.estado] }}>
-                          {ESTADO_LABELS[p.estado]}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5 text-sm font-semibold text-gray-900">
-                        {p.precioTotal ? `$${p.precioTotal.toLocaleString('es-AR')}` : '—'}
-                      </td>
-                      <td className="px-5 py-3.5 text-xs text-gray-400">
-                        {new Date(p.createdAt).toLocaleDateString('es-AR')}
-                      </td>
-                    </tr>
-                  ))}
+                  {data.ultimosPedidos.map(p => {
+                    const EstIcon = ESTADO_ICONS[p.estado]
+                    return (
+                      <tr key={p.id} className="hover:bg-slate-50/70 transition-colors border-b border-slate-100 last:border-0">
+                        <td className="px-4 py-3.5 text-[12px] font-mono text-slate-400 tabular-nums">#{p.numeroPedido}</td>
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold flex-shrink-0 text-white"
+                              style={{ background: colorFor(p.cliente.nombre) }}>
+                              {initials(p.cliente.nombre)}
+                            </div>
+                            <span className="text-[13px] font-semibold text-slate-900">{p.cliente.nombre}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap"
+                            style={{ background: ESTADO_COLORS[p.estado] + '18', color: ESTADO_COLORS[p.estado] }}>
+                            {EstIcon && <EstIcon size={10} strokeWidth={2.5} />}
+                            {ESTADO_LABELS[p.estado]}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5 text-[13px] font-semibold text-slate-900 font-mono tabular-nums">
+                          {p.precioTotal ? `$${p.precioTotal.toLocaleString('es-AR')}` : '—'}
+                        </td>
+                        <td className="px-4 py-3.5 text-[12px] text-slate-400">
+                          {new Date(p.createdAt).toLocaleDateString('es-AR')}
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
           )}
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <p className="text-sm font-medium text-gray-900 mb-4">Por estado</p>
+        {/* Por estado */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+          <p className="text-sm font-semibold text-slate-900 tracking-tight mb-5">Por estado</p>
           {pieData.length > 0 ? (
             <>
-              <ResponsiveContainer width="100%" height={150}>
+              <ResponsiveContainer width="100%" height={140}>
                 <PieChart>
-                  <Pie data={pieData} dataKey="value" cx="50%" cy="50%" innerRadius={40} outerRadius={65}>
+                  <Pie data={pieData} dataKey="value" cx="50%" cy="50%" innerRadius={38} outerRadius={60} strokeWidth={0}>
                     {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                   </Pie>
-                  <Tooltip formatter={(v: any) => [v, 'pedidos']} />
+                  <Tooltip
+                    contentStyle={{ fontSize: 12, borderRadius: 10, border: '1px solid #e2e8f0', boxShadow: '0 4px 12px -4px rgba(0,0,0,0.1)' }}
+                    formatter={(v: any) => [v, 'pedidos']}
+                  />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="space-y-2 mt-3">
-                {pieData.map(p => (
-                  <div key={p.name} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: p.color }} />
-                      <span className="text-xs text-gray-500">{p.name}</span>
+              <div className="space-y-2 mt-2">
+                {pieData.map(p => {
+                  const Icon = ESTADO_ICONS[p.estado]
+                  return (
+                    <div key={p.name} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: p.color }} />
+                        <span className="text-[12px] text-slate-500">{p.name}</span>
+                      </div>
+                      <span className="text-[12px] font-semibold text-slate-900 font-mono tabular-nums">{p.value}</span>
                     </div>
-                    <span className="text-xs font-semibold text-gray-900">{p.value}</span>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </>
           ) : (
-            <div className="flex items-center justify-center h-32 text-xs text-gray-400">Sin datos todavía</div>
+            <div className="flex items-center justify-center h-32 text-[12px] text-slate-400">Sin datos todavía</div>
           )}
         </div>
       </div>
 
       {/* Trend chart */}
-      <div className="mt-4 bg-white rounded-xl border border-gray-200 p-5">
-        <p className="text-sm font-medium text-gray-900 mb-4">Tendencia de pedidos — últimos 30 días</p>
+      <div className="bg-white rounded-2xl border border-slate-200 p-5">
+        <div className="flex items-center justify-between mb-5">
+          <p className="text-sm font-semibold text-slate-900 tracking-tight">Tendencia de pedidos</p>
+          <span className="text-[11px] text-slate-400 font-medium">Últimos 30 días</span>
+        </div>
         <ResponsiveContainer width="100%" height={180}>
           <LineChart data={trendData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+            <defs>
+              <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.12} />
+                <stop offset="100%" stopColor="#0ea5e9" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
             <XAxis
               dataKey="fecha"
-              tick={{ fontSize: 10, fill: '#9ca3af' }}
+              tick={{ fontSize: 10, fill: '#94a3b8' }}
               tickLine={false}
               axisLine={false}
               interval={4}
             />
             <YAxis
-              tick={{ fontSize: 10, fill: '#9ca3af' }}
+              tick={{ fontSize: 10, fill: '#94a3b8' }}
               tickLine={false}
               axisLine={false}
               allowDecimals={false}
             />
             <Tooltip
-              contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb', boxShadow: 'none' }}
+              contentStyle={{ fontSize: 12, borderRadius: 10, border: '1px solid #e2e8f0', boxShadow: '0 4px 12px -4px rgba(0,0,0,0.1)' }}
               formatter={(v: any) => [v, 'pedidos']}
-              labelStyle={{ color: '#374151', fontWeight: 600 }}
+              labelStyle={{ color: '#334155', fontWeight: 600 }}
+              cursor={{ stroke: '#0ea5e9', strokeWidth: 1, strokeDasharray: '4 4' }}
             />
             <Line
               type="monotone"
@@ -183,11 +321,12 @@ export default function Dashboard() {
               stroke="#0ea5e9"
               strokeWidth={2}
               dot={false}
-              activeDot={{ r: 4, fill: '#0ea5e9' }}
+              activeDot={{ r: 4, fill: '#0ea5e9', strokeWidth: 0 }}
             />
           </LineChart>
         </ResponsiveContainer>
       </div>
+
     </div>
   )
 }

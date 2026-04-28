@@ -67,7 +67,7 @@ export default function SuperAdminLayout() {
             <p className="text-[11px] text-slate-500 truncate">{user?.email}</p>
           </div>
           <button onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium text-slate-500 hover:bg-white/5 hover:text-red-400 w-full transition-colors">
+            className="flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[12px] font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 w-full transition-colors">
             <LogOut size={15} />
             Cerrar sesión
           </button>
