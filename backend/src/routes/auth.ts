@@ -121,4 +121,18 @@ router.post('/seed', async (_req: Request, res: Response) => {
   }
 })
 
+router.patch('/usuario/me', requireAuth, async (req: AuthRequest, res: Response) => {
+  const { nombre, email } = req.body
+  if (!nombre && !email) return res.status(400).json({ error: 'Faltan datos' })
+  const data: any = {}
+  if (nombre) data.nombre = nombre
+  if (email) data.email = email
+  try {
+    const user = await prisma.usuario.update({ where: { id: req.user!.id }, data })
+    res.json({ id: user.id, nombre: user.nombre, email: user.email, role: user.role })
+  } catch (err) {
+    res.status(500).json({ error: 'Error del servidor' })
+  }
+})
+
 export default router

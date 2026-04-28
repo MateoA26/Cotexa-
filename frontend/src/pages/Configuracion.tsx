@@ -43,7 +43,7 @@ const initNuevo = {
 }
 
 export default function Configuracion() {
-  const { user } = useAuth()
+  const { user, updateUser } = useAuth()
   const queryClient = useQueryClient()
 
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -59,9 +59,16 @@ export default function Configuracion() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [logoError, setLogoError] = useState<string | null>(null)
 
+  const [perfilForm, setPerfilForm] = useState({ nombre: '', email: '' })
+  const [savedPerfilOk, setSavedPerfilOk] = useState(false)
+
   const [passForm, setPassForm] = useState({ actual: '', nuevo: '', confirmar: '' })
   const [passError, setPassError] = useState('')
   const [passOk, setPassOk] = useState(false)
+
+  useEffect(() => {
+    if (user) setPerfilForm({ nombre: user.nombre || '', email: user.email || '' })
+  }, [user?.id])
 
   const { data: empresa } = useQuery({
     queryKey: ['empresa'],
@@ -113,6 +120,15 @@ export default function Configuracion() {
     }
     reader.readAsDataURL(file)
   }
+
+  const updatePerfilMut = useMutation({
+    mutationFn: (data: { nombre?: string; email?: string }) => authApi.actualizarUsuario(data),
+    onSuccess: (res) => {
+      updateUser({ nombre: res.data.nombre, email: res.data.email })
+      setSavedPerfilOk(true)
+      setTimeout(() => setSavedPerfilOk(false), 3000)
+    },
+  })
 
   const changePassMut = useMutation({
     mutationFn: () => authApi.cambiarPassword(passForm.actual, passForm.nuevo),
@@ -297,15 +313,32 @@ export default function Configuracion() {
         <div className="flex items-center -mx-5 px-5 pb-4 mb-5 border-b border-slate-100">
           <p className="text-sm font-semibold text-slate-900 tracking-tight">Mi perfil</p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div>
             <label className={lc}>Nombre</label>
-            <input value={user?.nombre || ''} disabled className={ic + ' bg-slate-50 text-slate-400 cursor-not-allowed'} />
+            <input value={perfilForm.nombre}
+              onChange={e => setPerfilForm(p => ({ ...p, nombre: e.target.value }))}
+              className={ic} />
           </div>
           <div>
             <label className={lc}>Email</label>
-            <input value={user?.email || ''} disabled className={ic + ' bg-slate-50 text-slate-400 cursor-not-allowed'} />
+            <input type="email" value={perfilForm.email}
+              onChange={e => setPerfilForm(p => ({ ...p, email: e.target.value }))}
+              className={ic} />
           </div>
+        </div>
+        <div className="flex items-center gap-3 mb-6">
+          <button onClick={() => updatePerfilMut.mutate(perfilForm)}
+            disabled={!perfilForm.nombre || updatePerfilMut.isPending}
+            className="h-9 px-4 bg-sky-500 hover:bg-sky-600 text-white rounded-[10px] text-[13px] font-semibold transition-colors disabled:opacity-40 shadow-[0_4px_12px_-4px_rgba(14,165,233,0.45)]">
+            {updatePerfilMut.isPending ? 'Guardando...' : 'Guardar perfil'}
+          </button>
+          {savedPerfilOk && (
+            <span className="flex items-center gap-1.5 text-[13px] text-emerald-600 font-medium">
+              <CheckCircle2 size={14} />
+              Datos actualizados
+            </span>
+          )}
         </div>
 
         <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">Cambiar contraseña</p>

@@ -25,6 +25,8 @@ export const authApi = {
   seed: () => api.post('/auth/seed'),
   cambiarPassword: (passwordActual: string, passwordNuevo: string) =>
     api.patch('/auth/cambiar-password', { passwordActual, passwordNuevo }),
+  actualizarUsuario: (data: { nombre?: string; email?: string }) =>
+    api.patch('/auth/usuario/me', data),
 }
 
 export const empresaApi = {
