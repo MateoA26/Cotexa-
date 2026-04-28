@@ -194,6 +194,20 @@ router.patch('/:id', async (req: AuthRequest, res: Response) => {
     notasCliente, precioBase, valoresCampos
   } = req.body
   const pedidoId = Number(req.params.id)
+
+  if (req.user!.role === 'PRODUCCION') {
+    const camposPermitidos = ['estado']
+    const camposEnviados = Object.keys(req.body)
+    const camposNoPermitidos = camposEnviados.filter(c => !camposPermitidos.includes(c))
+    if (camposNoPermitidos.length > 0) {
+      return res.status(403).json({ error: 'Solo podés cambiar el estado del pedido' })
+    }
+    const estadosPermitidos = ['EN_PRODUCCION', 'LISTO']
+    if (!estado || !estadosPermitidos.includes(estado)) {
+      return res.status(403).json({ error: 'Solo podés cambiar el estado a EN_PRODUCCION o LISTO' })
+    }
+  }
+
   const pedido = await prisma.pedido.findFirst({
     where: { id: pedidoId, empresaId: req.user!.empresaId! }
   })

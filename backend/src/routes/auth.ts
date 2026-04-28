@@ -68,6 +68,7 @@ router.post('/seed', async (_req: Request, res: Response) => {
     const hashAdmin = await bcrypt.hash('admin123', 10)
     const hashDemo = await bcrypt.hash('demo123', 10)
     const hashTesting = await bcrypt.hash('testing123', 10)
+    const hashProd = await bcrypt.hash('prod123', 10)
 
     const internalEmpresa = await prisma.empresa.upsert({
       where: { slug: 'cotexa-internal' },
@@ -105,6 +106,12 @@ router.post('/seed', async (_req: Request, res: Response) => {
       create: { email: 'testing@testing.com', passwordHash: hashTesting, nombre: 'Testing User', role: 'ADMIN', empresaId: testingEmpresa.id }
     })
 
+    await prisma.usuario.upsert({
+      where: { email: 'produccion@testing.com' },
+      update: { role: 'PRODUCCION', passwordHash: hashProd, empresaId: testingEmpresa.id },
+      create: { email: 'produccion@testing.com', passwordHash: hashProd, nombre: 'Operario Testing', role: 'PRODUCCION', empresaId: testingEmpresa.id }
+    })
+
     await (prisma.cliente as any).createMany({
       data: [
         { empresaId: demoEmpresa.id, nombre: 'María García', email: 'maria@ejemplo.com', tipo: 'B2C', telefono: '1145001234' },
@@ -114,7 +121,8 @@ router.post('/seed', async (_req: Request, res: Response) => {
     res.json({ ok: true, usuarios: [
       'admin@cotexa.com / admin123 (SUPERADMIN)',
       'ejemplodemo@cotexa.com / demo123 (ADMIN)',
-      'testing@testing.com / testing123 (ADMIN)'
+      'testing@testing.com / testing123 (ADMIN)',
+      'produccion@testing.com / prod123 (PRODUCCION)'
     ] })
   } catch (err) {
     res.status(500).json({ error: String(err) })

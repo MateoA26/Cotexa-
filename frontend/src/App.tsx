@@ -3,6 +3,7 @@ import { useAuth } from './context/AuthContext'
 import Login from './pages/Login'
 import Layout from './components/Layout'
 import SuperAdminLayout from './components/SuperAdminLayout'
+import ProduccionLayout from './components/ProduccionLayout'
 import Dashboard from './pages/Dashboard'
 import Pedidos from './pages/Pedidos'
 import NuevoPedido from './pages/NuevoPedido'
@@ -12,6 +13,7 @@ import Configuracion from './pages/Configuracion'
 import SuperAdminEmpresas from './pages/superadmin/Empresas'
 import SuperAdminUsuarios from './pages/superadmin/Usuarios'
 import SuperAdminEmpresaDetalle from './pages/superadmin/EmpresaDetalle'
+import Produccion from './pages/Produccion'
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth()
@@ -22,6 +24,7 @@ const AdminOnlyRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, user } = useAuth()
   if (!isAuthenticated) return <Navigate to="/login" replace />
   if (user?.role === 'SUPERADMIN') return <Navigate to="/superadmin/empresas" replace />
+  if (user?.role === 'PRODUCCION') return <Navigate to="/produccion" replace />
   return <>{children}</>
 }
 
@@ -29,6 +32,13 @@ const SuperAdminRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, user } = useAuth()
   if (!isAuthenticated) return <Navigate to="/login" replace />
   if (user?.role !== 'SUPERADMIN') return <Navigate to="/dashboard" replace />
+  return <>{children}</>
+}
+
+const ProduccionRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated, user } = useAuth()
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+  if (user?.role !== 'PRODUCCION') return <Navigate to="/dashboard" replace />
   return <>{children}</>
 }
 
@@ -43,6 +53,11 @@ export default function App() {
         <Route path="empresas" element={<SuperAdminEmpresas />} />
         <Route path="empresas/:id" element={<SuperAdminEmpresaDetalle />} />
         <Route path="usuarios" element={<SuperAdminUsuarios />} />
+      </Route>
+
+      {/* Produccion area */}
+      <Route path="/produccion" element={<ProduccionRoute><ProduccionLayout /></ProduccionRoute>}>
+        <Route index element={<Produccion />} />
       </Route>
 
       {/* Regular app */}
