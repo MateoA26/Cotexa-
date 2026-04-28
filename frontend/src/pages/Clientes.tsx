@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { clientesApi, pedidosApi } from '../services/api'
 import { Cliente, Pedido } from '../types'
 import { ESTADO_LABELS, ESTADO_COLORS } from '../utils/estados'
-import { Plus, X, Users, Package, ChevronRight } from 'lucide-react'
+import { Plus, X, Users, Package, ChevronRight, Pencil } from 'lucide-react'
 
 const initForm = { nombre: '', email: '', telefono: '', tipo: 'B2C', razonSocial: '', cuit: '', notas: '' }
 
@@ -18,6 +18,8 @@ export default function Clientes() {
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState(initForm)
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null)
+  const [editMode, setEditMode] = useState(false)
+  const [editForm, setEditForm] = useState({ nombre: '', email: '', telefono: '', razonSocial: '', cuit: '', notas: '' })
 
   const { data: clientes = [], isLoading } = useQuery<Cliente[]>({
     queryKey: ['clientes'],
@@ -30,6 +32,16 @@ export default function Clientes() {
     enabled: !!selectedCliente,
   })
 
+  const totalFacturado = useMemo(() =>
+    clientePedidos.reduce((sum, p) => sum + (p.precioTotal || 0), 0),
+    [clientePedidos]
+  )
+  const ticketPromedio = clientePedidos.length > 0 ? Math.round(totalFacturado / clientePedidos.length) : 0
+  const pedidosActivosCount = useMemo(() =>
+    clientePedidos.filter(p => p.estado !== 'ENTREGADO' && p.estado !== 'CANCELADO').length,
+    [clientePedidos]
+  )
+
   const mutation = useMutation({
     mutationFn: () => clientesApi.create(form),
     onSuccess: () => {
@@ -39,8 +51,39 @@ export default function Clientes() {
     }
   })
 
+  const updateMutation = useMutation({
+    mutationFn: (data: typeof editForm) => clientesApi.update(selectedCliente!.id, data),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['clientes'] })
+      queryClient.invalidateQueries({ queryKey: ['pedidos', 'cliente', selectedCliente!.id] })
+      setSelectedCliente(res.data)
+      setEditMode(false)
+    }
+  })
+
+  const selectCliente = (c: Cliente | null) => {
+    setSelectedCliente(c)
+    setEditMode(false)
+  }
+
+  const enterEdit = () => {
+    if (!selectedCliente) return
+    setEditForm({
+      nombre: selectedCliente.nombre || '',
+      email: selectedCliente.email || '',
+      telefono: selectedCliente.telefono || '',
+      razonSocial: selectedCliente.razonSocial || '',
+      cuit: selectedCliente.cuit || '',
+      notas: selectedCliente.notas || '',
+    })
+    setEditMode(true)
+  }
+
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }))
+
+  const setE = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setEditForm(f => ({ ...f, [k]: e.target.value }))
 
   const ic = 'w-full h-10 px-3 border border-slate-200 rounded-[10px] text-[13px] focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white'
   const lc = 'block text-[11px] font-semibold text-slate-500 uppercase tracking-widest mb-1.5'
@@ -71,7 +114,7 @@ export default function Clientes() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {clientes.map(c => (
-            <div key={c.id} onClick={() => setSelectedCliente(c)}
+            <div key={c.id} onClick={() => selectCliente(c)}
               className="bg-white rounded-2xl border border-slate-200 p-5 cursor-pointer hover:border-sky-200 hover:shadow-[0_4px_16px_-4px_rgba(14,165,233,0.12)] transition-all">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-11 h-11 rounded-full flex items-center justify-center text-[15px] font-bold text-white flex-shrink-0"
@@ -104,96 +147,203 @@ export default function Clientes() {
       {/* Client detail drawer */}
       {selectedCliente && (
         <>
-          <div className="fixed inset-0 bg-black/40 z-30" onClick={() => setSelectedCliente(null)} />
+          <div className="fixed inset-0 bg-black/40 z-30" onClick={() => selectCliente(null)} />
           <div className="fixed inset-y-0 right-0 z-40 w-full max-w-[400px] bg-white shadow-2xl flex flex-col">
 
+            {/* Drawer header */}
             <div className="flex items-start justify-between p-5 border-b border-slate-100">
-              <div>
+              <div className="flex-1 min-w-0 mr-2">
                 <div className="flex items-center gap-2 mb-1">
-                  <p className="font-bold text-slate-900 text-[15px]">{selectedCliente.nombre}</p>
-                  <span className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-[3px] rounded-full ${
+                  <p className="font-bold text-slate-900 text-[15px] truncate">{selectedCliente.nombre}</p>
+                  <span className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-[3px] rounded-full flex-shrink-0 ${
                     selectedCliente.tipo === 'B2B' ? 'bg-sky-50 text-sky-600' : 'bg-purple-50 text-purple-600'
                   }`}>{selectedCliente.tipo}</span>
                 </div>
                 {selectedCliente.razonSocial && (
-                  <p className="text-[13px] text-slate-500">{selectedCliente.razonSocial}</p>
+                  <p className="text-[13px] text-slate-500 truncate">{selectedCliente.razonSocial}</p>
                 )}
               </div>
-              <button onClick={() => setSelectedCliente(null)}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors flex-shrink-0">
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="p-5 border-b border-slate-100">
-              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-3">Información</p>
-              <div className="space-y-2.5">
-                {selectedCliente.email && (
-                  <div className="flex justify-between text-[13px]">
-                    <span className="text-slate-400">Email</span>
-                    <span className="text-slate-900 font-medium">{selectedCliente.email}</span>
-                  </div>
-                )}
-                {selectedCliente.telefono && (
-                  <div className="flex justify-between text-[13px]">
-                    <span className="text-slate-400">Teléfono</span>
-                    <span className="text-slate-900 font-medium">{selectedCliente.telefono}</span>
-                  </div>
-                )}
-                {selectedCliente.cuit && (
-                  <div className="flex justify-between text-[13px]">
-                    <span className="text-slate-400">CUIT</span>
-                    <span className="text-slate-900 font-medium font-mono">{selectedCliente.cuit}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-[13px]">
-                  <span className="text-slate-400">Cliente desde</span>
-                  <span className="text-slate-900 font-medium">
-                    {new Date(selectedCliente.createdAt).toLocaleDateString('es-AR')}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-5">
-              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-3">
-                Historial de pedidos
-              </p>
-              {loadingPedidos ? (
-                <p className="text-[13px] text-slate-400">Cargando pedidos...</p>
-              ) : clientePedidos.length === 0 ? (
-                <div className="text-center py-8">
-                  <Package size={28} className="text-slate-200 mx-auto mb-2" />
-                  <p className="text-[13px] text-slate-400">Sin pedidos registrados</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {clientePedidos.map(p => (
-                    <button key={p.id} onClick={() => navigate(`/pedidos/${p.id}`)}
-                      className="w-full flex items-center gap-3 p-3.5 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors text-left">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[13px] font-semibold text-slate-900 font-mono">#{p.numeroPedido}</span>
-                          <span className="inline-flex items-center text-[11px] font-semibold px-2 py-[2px] rounded-full"
-                            style={{ background: ESTADO_COLORS[p.estado] + '1a', color: ESTADO_COLORS[p.estado] }}>
-                            {ESTADO_LABELS[p.estado]}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3 text-[12px] text-slate-400">
-                          <span>{new Date(p.createdAt).toLocaleDateString('es-AR')}</span>
-                          {p.precioTotal && (
-                            <span className="font-semibold text-slate-700 font-mono">
-                              ${p.precioTotal.toLocaleString('es-AR')}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <ChevronRight size={14} className="text-slate-300 flex-shrink-0" />
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                {!editMode && (
+                  <>
+                    <button
+                      onClick={() => navigate(`/pedidos/nuevo?clienteId=${selectedCliente.id}`)}
+                      className="flex items-center gap-1 text-[12px] font-semibold text-sky-600 bg-sky-50 hover:bg-sky-100 px-2.5 h-7 rounded-lg transition-colors whitespace-nowrap">
+                      <Plus size={12} />
+                      Pedido
                     </button>
-                  ))}
-                </div>
-              )}
+                    <button onClick={enterEdit}
+                      className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                      title="Editar cliente">
+                      <Pencil size={14} />
+                    </button>
+                  </>
+                )}
+                <button onClick={() => selectCliente(null)}
+                  className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+                  <X size={16} />
+                </button>
+              </div>
             </div>
+
+            {editMode ? (
+              /* ── Edit form ── */
+              <div className="flex-1 overflow-y-auto p-5">
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">Editar cliente</p>
+                <div className="space-y-3">
+                  <div>
+                    <label className={lc}>Nombre *</label>
+                    <input value={editForm.nombre} onChange={setE('nombre')} className={ic} placeholder="Nombre" />
+                  </div>
+                  <div>
+                    <label className={lc}>Email</label>
+                    <input type="email" value={editForm.email} onChange={setE('email')} className={ic} placeholder="email@ejemplo.com" />
+                  </div>
+                  <div>
+                    <label className={lc}>Teléfono</label>
+                    <input value={editForm.telefono} onChange={setE('telefono')} className={ic} placeholder="11 4500 1234" />
+                  </div>
+                  {selectedCliente.tipo === 'B2B' && (
+                    <>
+                      <div>
+                        <label className={lc}>Razón social</label>
+                        <input value={editForm.razonSocial} onChange={setE('razonSocial')} className={ic} placeholder="Empresa S.A." />
+                      </div>
+                      <div>
+                        <label className={lc}>CUIT</label>
+                        <input value={editForm.cuit} onChange={setE('cuit')} className={ic} placeholder="30-12345678-9" />
+                      </div>
+                    </>
+                  )}
+                  <div>
+                    <label className={lc}>Notas internas</label>
+                    <textarea value={editForm.notas} onChange={setE('notas')} rows={3}
+                      className="w-full px-3 py-2.5 border border-slate-200 rounded-[10px] text-[13px] focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white resize-none"
+                      placeholder="Notas internas..." />
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <button onClick={() => setEditMode(false)}
+                    className="flex-1 h-10 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-[10px] text-[13px] font-semibold transition-colors">
+                    Cancelar
+                  </button>
+                  <button onClick={() => updateMutation.mutate(editForm)}
+                    disabled={!editForm.nombre || updateMutation.isPending}
+                    className="flex-1 h-10 bg-sky-500 hover:bg-sky-600 text-white rounded-[10px] text-[13px] font-semibold transition-colors disabled:opacity-40 shadow-[0_4px_12px_-4px_rgba(14,165,233,0.45)]">
+                    {updateMutation.isPending ? 'Guardando...' : 'Guardar'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* ── Metrics ── */}
+                <div className="px-5 py-4 border-b border-slate-100">
+                  <div className="grid grid-cols-3 gap-2">
+                    {loadingPedidos ? (
+                      [...Array(3)].map((_, i) => (
+                        <div key={i} className="bg-slate-50 rounded-xl p-2.5 h-[52px] animate-pulse" />
+                      ))
+                    ) : (
+                      [
+                        { label: 'Facturado', value: `$${totalFacturado.toLocaleString('es-AR')}` },
+                        { label: 'Ticket prom.', value: `$${ticketPromedio.toLocaleString('es-AR')}` },
+                        { label: 'En proceso', value: String(pedidosActivosCount) },
+                      ].map(m => (
+                        <div key={m.label} className="bg-slate-50 rounded-xl p-2.5 text-center">
+                          <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-1 leading-tight">{m.label}</p>
+                          <p className="text-[15px] font-bold font-mono text-slate-900 tabular-nums leading-none">{m.value}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* ── Información ── */}
+                <div className="p-5 border-b border-slate-100">
+                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-3">Información</p>
+                  <div className="space-y-2.5">
+                    {selectedCliente.email && (
+                      <div className="flex justify-between text-[13px]">
+                        <span className="text-slate-400">Email</span>
+                        <span className="text-slate-900 font-medium">{selectedCliente.email}</span>
+                      </div>
+                    )}
+                    {selectedCliente.telefono && (
+                      <div className="flex justify-between text-[13px]">
+                        <span className="text-slate-400">Teléfono</span>
+                        <span className="text-slate-900 font-medium">{selectedCliente.telefono}</span>
+                      </div>
+                    )}
+                    {selectedCliente.cuit && (
+                      <div className="flex justify-between text-[13px]">
+                        <span className="text-slate-400">CUIT</span>
+                        <span className="text-slate-900 font-medium font-mono">{selectedCliente.cuit}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-[13px]">
+                      <span className="text-slate-400">Cliente desde</span>
+                      <span className="text-slate-900 font-medium">
+                        {new Date(selectedCliente.createdAt).toLocaleDateString('es-AR')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Notas internas ── */}
+                <div className="px-5 py-4 border-b border-slate-100">
+                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-2.5">Notas internas</p>
+                  {selectedCliente.notas ? (
+                    <p className="text-[13px] text-slate-600 leading-relaxed">{selectedCliente.notas}</p>
+                  ) : (
+                    <p className="text-[13px] text-slate-400 italic">Sin notas</p>
+                  )}
+                </div>
+
+                {/* ── Historial de pedidos ── */}
+                <div className="flex-1 overflow-y-auto p-5">
+                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-3">
+                    Historial de pedidos
+                  </p>
+                  {loadingPedidos ? (
+                    <p className="text-[13px] text-slate-400">Cargando pedidos...</p>
+                  ) : clientePedidos.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Package size={28} className="text-slate-200 mx-auto mb-2" />
+                      <p className="text-[13px] text-slate-400">Sin pedidos registrados</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {clientePedidos.map(p => (
+                        <button key={p.id} onClick={() => navigate(`/pedidos/${p.id}`)}
+                          className="w-full flex items-center gap-3 p-3.5 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors text-left">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-[13px] font-semibold text-slate-900 font-mono">#{p.numeroPedido}</span>
+                              <span className="inline-flex items-center text-[11px] font-semibold px-2 py-[2px] rounded-full"
+                                style={{ background: ESTADO_COLORS[p.estado] + '1a', color: ESTADO_COLORS[p.estado] }}>
+                                {ESTADO_LABELS[p.estado]}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3 text-[12px] text-slate-400">
+                              <span>{new Date(p.createdAt).toLocaleDateString('es-AR')}</span>
+                              {p.precioTotal && (
+                                <span className="font-semibold text-slate-700 font-mono">
+                                  ${p.precioTotal.toLocaleString('es-AR')}
+                                </span>
+                              )}
+                            </div>
+                            {p.material && (
+                              <p className="text-[11px] text-slate-400 mt-0.5">{p.material}</p>
+                            )}
+                          </div>
+                          <ChevronRight size={14} className="text-slate-300 flex-shrink-0" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </>
       )}
