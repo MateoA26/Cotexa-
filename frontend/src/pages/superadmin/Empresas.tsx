@@ -69,7 +69,7 @@ export default function SuperAdminEmpresas() {
     <div className="max-w-[1360px] mx-auto px-6 py-7">
       <div className="flex items-center justify-between mb-7">
         <div>
-          <h1 className="text-[22px] font-bold text-slate-900 tracking-tight">Empresas</h1>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Empresas</h1>
           <p className="text-[13px] text-slate-400 mt-0.5">{empresas.length} empresa{empresas.length !== 1 ? 's' : ''} registrada{empresas.length !== 1 ? 's' : ''}</p>
         </div>
         <button onClick={() => setShowCreate(true)}

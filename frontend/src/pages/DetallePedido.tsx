@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pedidosApi, camposApi } from '../services/api'
 import { Pedido, CampoCustom } from '../types'
 import { ESTADO_LABELS, ESTADO_COLORS, ESTADOS_ORDEN } from '../utils/estados'
-import { ArrowLeft, Edit2, Download, Calculator } from 'lucide-react'
+import { ArrowLeft, Edit2, Download, Calculator, FileText, Clock, CheckCircle2, Package, Truck, XCircle } from 'lucide-react'
 
 const PRECIO_BASE = 150
 const MATERIALES = ['Cartón corrugado', 'Cartón microcorrugado', 'Kraft', 'Cartulina', 'Otro']
@@ -19,6 +19,12 @@ const DESCUENTOS = [
   { desde: 500, desc: 0.10 },
   { desde: 250, desc: 0.05 },
 ]
+
+const ESTADO_ICONS: Record<string, any> = {
+  COTIZACION: FileText, PENDIENTE: Clock, CONFIRMADO: CheckCircle2,
+  EN_PRODUCCION: Package, LISTO: CheckCircle2, ENVIADO: Truck,
+  ENTREGADO: Truck, CANCELADO: XCircle,
+}
 
 type BreakdownItem = { label: string; delta: number }
 
@@ -262,6 +268,7 @@ export default function DetallePedido() {
 
   const estadoIdx = ESTADOS_ORDEN.indexOf(pedido.estado)
   const estadosProgreso = ESTADOS_ORDEN.filter(e => e !== 'CANCELADO')
+  const EstadoIcon = ESTADO_ICONS[pedido.estado]
 
   const ic = 'w-full h-10 px-3 border border-slate-200 rounded-[10px] text-[13px] focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white'
   const lc = 'block text-[11px] font-semibold text-slate-500 uppercase tracking-widest mb-1.5'
@@ -278,8 +285,9 @@ export default function DetallePedido() {
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 gap-y-1">
             <h1 className="text-[22px] font-bold text-slate-900 tracking-tight">Pedido #{pedido.numeroPedido}</h1>
-            <span className="inline-flex items-center text-[11px] font-semibold px-2.5 py-[3px] rounded-full"
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-[3px] rounded-full"
               style={{ background: ESTADO_COLORS[pedido.estado] + '1a', color: ESTADO_COLORS[pedido.estado] }}>
+              {EstadoIcon && <EstadoIcon size={10} strokeWidth={2.5} />}
               {ESTADO_LABELS[pedido.estado]}
             </span>
           </div>
@@ -569,18 +577,23 @@ export default function DetallePedido() {
         {(pedido.eventos || []).length === 0 ? (
           <p className="text-[13px] text-slate-400">Sin eventos</p>
         ) : (
-          <div className="space-y-3">
-            {(pedido.eventos || []).map(ev => (
-              <div key={ev.id} className="flex gap-3 items-start">
-                <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
-                  style={{ background: ESTADO_COLORS[ev.estado] || '#94a3b8' }} />
-                <div>
-                  <p className="text-[13px] font-semibold text-slate-900">{ESTADO_LABELS[ev.estado] || ev.estado}</p>
-                  {ev.descripcion && <p className="text-[12px] text-slate-500">{ev.descripcion}</p>}
-                  <p className="text-[11px] text-slate-400 mt-0.5 font-mono">{new Date(ev.createdAt).toLocaleString('es-AR')}</p>
+          <div className="space-y-4">
+            {(pedido.eventos || []).map(ev => {
+              const EvIcon = ESTADO_ICONS[ev.estado]
+              return (
+                <div key={ev.id} className="flex gap-3 items-start">
+                  <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center mt-0.5"
+                    style={{ background: (ESTADO_COLORS[ev.estado] || '#94a3b8') + '18', color: ESTADO_COLORS[ev.estado] || '#94a3b8' }}>
+                    {EvIcon ? <EvIcon size={12} strokeWidth={2.5} /> : <div className="w-2 h-2 rounded-full" style={{ background: ESTADO_COLORS[ev.estado] || '#94a3b8' }} />}
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-semibold text-slate-900">{ESTADO_LABELS[ev.estado] || ev.estado}</p>
+                    {ev.descripcion && <p className="text-[12px] text-slate-500">{ev.descripcion}</p>}
+                    <p className="text-[11px] text-slate-400 mt-0.5 font-mono">{new Date(ev.createdAt).toLocaleString('es-AR')}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

@@ -43,6 +43,9 @@ export default function SuperAdminUsuarios() {
   const [editUser, setEditUser] = useState<UsuarioConEmpresa | null>(null)
   const [editForm, setEditForm] = useState({ nombre: '', email: '', password: '', role: '', activo: true })
 
+  const [roleFiltro, setRoleFiltro] = useState('')
+  const [empresaFiltro, setEmpresaFiltro] = useState(filterEmpresaId || '')
+
   const { data: usuarios = [], isLoading } = useQuery<UsuarioConEmpresa[]>({
     queryKey: ['sa-usuarios'],
     queryFn: () => superadminApi.getUsuarios().then(r => r.data),
@@ -82,19 +85,20 @@ export default function SuperAdminUsuarios() {
     updateMut.mutate({ id: editUser.id, data })
   }
 
-  const filtered = filterEmpresaId
-    ? usuarios.filter(u => String(u.empresaId) === filterEmpresaId)
-    : usuarios
+  const filtered = usuarios.filter(u =>
+    (!empresaFiltro || String(u.empresaId) === empresaFiltro) &&
+    (!roleFiltro || u.role === roleFiltro)
+  )
 
-  const filterEmpresaNombre = filterEmpresaId
-    ? empresas.find(e => String(e.id) === filterEmpresaId)?.nombre
+  const filterEmpresaNombre = empresaFiltro
+    ? empresas.find(e => String(e.id) === empresaFiltro)?.nombre
     : null
 
   return (
     <div className="max-w-[1360px] mx-auto px-6 py-7">
       <div className="flex items-center justify-between mb-7">
         <div>
-          <h1 className="text-[22px] font-bold text-slate-900 tracking-tight">Usuarios</h1>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Usuarios</h1>
           <p className="text-[13px] text-slate-400 mt-0.5">
             {filtered.length} usuario{filtered.length !== 1 ? 's' : ''}
             {filterEmpresaNombre && (
@@ -107,6 +111,36 @@ export default function SuperAdminUsuarios() {
           <Plus size={14} />
           Nuevo usuario
         </button>
+      </div>
+
+      {/* Filter pills */}
+      <div className="flex flex-col gap-2.5 mb-5">
+        {empresas.length > 0 && (
+          <div className="flex gap-1.5 flex-wrap">
+            {[{ id: '', nombre: 'Todas las empresas' }, ...empresas].map(e => (
+              <button key={e.id} onClick={() => setEmpresaFiltro(String(e.id))}
+                className={`inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-semibold transition-colors whitespace-nowrap ${
+                  empresaFiltro === String(e.id)
+                    ? 'bg-sky-500 text-white shadow-[0_2px_8px_-2px_rgba(14,165,233,0.5)]'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}>
+                {e.nombre}
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="flex gap-1.5 flex-wrap">
+          {['', 'ADMIN', 'PRODUCCION', 'SUPERADMIN'].map(r => (
+            <button key={r} onClick={() => setRoleFiltro(r)}
+              className={`inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-semibold transition-colors whitespace-nowrap ${
+                roleFiltro === r
+                  ? 'bg-sky-500 text-white shadow-[0_2px_8px_-2px_rgba(14,165,233,0.5)]'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}>
+              {r || 'Todos los roles'}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Create modal */}

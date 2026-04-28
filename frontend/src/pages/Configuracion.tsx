@@ -251,15 +251,17 @@ export default function Configuracion() {
   }
 
   return (
-    <div className="max-w-[860px] mx-auto px-6 py-7">
+    <div className="max-w-3xl mx-auto px-6 py-7">
       <div className="mb-7">
-        <h1 className="text-[22px] font-bold text-slate-900 tracking-tight">Configuración</h1>
+        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Configuración</h1>
         <p className="text-[13px] text-slate-400 mt-0.5">Administrá los datos y opciones del cotizador</p>
       </div>
 
       {/* Mi perfil */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-4">
-        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-5">Mi perfil</p>
+        <div className="flex items-center -mx-5 px-5 pb-4 mb-5 border-b border-slate-100">
+          <p className="text-sm font-semibold text-slate-900 tracking-tight">Mi perfil</p>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <div>
             <label className={lc}>Nombre</label>
@@ -310,7 +312,9 @@ export default function Configuracion() {
 
       {/* Datos del negocio */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-4">
-        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-5">Datos del negocio</p>
+        <div className="flex items-center -mx-5 px-5 pb-4 mb-5 border-b border-slate-100">
+          <p className="text-sm font-semibold text-slate-900 tracking-tight">Datos del negocio</p>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div>
             <label className={lc}>Nombre de la empresa</label>
@@ -342,7 +346,9 @@ export default function Configuracion() {
 
       {/* Precios base */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-4">
-        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-5">Precios base</p>
+        <div className="flex items-center -mx-5 px-5 pb-4 mb-5 border-b border-slate-100">
+          <p className="text-sm font-semibold text-slate-900 tracking-tight">Precios base</p>
+        </div>
 
         {/* Precio base */}
         <div className="mb-6">
@@ -571,17 +577,17 @@ export default function Configuracion() {
 
       {/* Campos del cotizador */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">Campos del cotizador</p>
+        <div className="flex items-start justify-between -mx-5 px-5 pb-4 mb-4 border-b border-slate-100 gap-3">
+          <div>
+            <p className="text-sm font-semibold text-slate-900 tracking-tight">Campos del cotizador</p>
+            <p className="text-[12px] text-slate-400 mt-0.5">Los campos aparecen en el formulario de cotización y afectan el precio según su configuración.</p>
+          </div>
           <button onClick={() => setShowNuevo(s => !s)}
-            className="flex items-center gap-1.5 h-8 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-[8px] text-[12px] font-semibold transition-colors">
+            className="flex items-center gap-1.5 h-8 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-[8px] text-[12px] font-semibold transition-colors flex-shrink-0">
             <Plus size={12} />
             Nuevo campo
           </button>
         </div>
-        <p className="text-[12px] text-slate-400 mb-4">
-          Los campos aparecen en el formulario de cotización y afectan el precio según su configuración.
-        </p>
 
         {showNuevo && (
           <div className="border border-sky-200 bg-sky-50/40 rounded-xl p-4 mb-4">

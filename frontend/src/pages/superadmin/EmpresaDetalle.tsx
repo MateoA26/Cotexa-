@@ -102,7 +102,7 @@ export default function EmpresaDetalle() {
             <Building2 size={18} className="text-sky-500" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-[22px] font-bold text-slate-900 tracking-tight truncate">
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight truncate">
               {empresa?.nombre ?? '...'}
             </h1>
             <div className="flex items-center gap-2.5 mt-0.5">

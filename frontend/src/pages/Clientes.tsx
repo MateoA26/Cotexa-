@@ -8,6 +8,10 @@ import { Plus, X, Users, Package, ChevronRight } from 'lucide-react'
 
 const initForm = { nombre: '', email: '', telefono: '', tipo: 'B2C', razonSocial: '', cuit: '', notas: '' }
 
+const AVATAR_COLORS = ['#0ea5e9', '#8b5cf6', '#f59e0b', '#10b981', '#ec4899']
+const initials = (n: string) => n.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase()
+const colorFor = (n: string) => AVATAR_COLORS[n.charCodeAt(0) % AVATAR_COLORS.length]
+
 export default function Clientes() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
@@ -46,7 +50,7 @@ export default function Clientes() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-7">
         <div>
-          <h1 className="text-[22px] font-bold text-slate-900 tracking-tight">Clientes</h1>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Clientes</h1>
           <p className="text-[13px] text-slate-400 mt-0.5">{clientes.length} cliente{clientes.length !== 1 ? 's' : ''}</p>
         </div>
         <button onClick={() => setShowModal(true)}
@@ -56,50 +60,46 @@ export default function Clientes() {
         </button>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-        {isLoading ? (
-          <div className="p-12 text-center text-[13px] text-slate-400">Cargando...</div>
-        ) : clientes.length === 0 ? (
-          <div className="p-12 text-center">
-            <Users size={32} className="text-slate-200 mx-auto mb-3" />
-            <p className="text-[13px] text-slate-400">No hay clientes todavía</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[560px]">
-              <thead>
-                <tr className="border-b border-slate-100">
-                  {['Nombre', 'Email', 'Teléfono', 'Tipo', 'Pedidos', 'Alta'].map(h => (
-                    <th key={h} className="text-left px-5 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-widest">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {clientes.map(c => (
-                  <tr key={c.id}
-                    onClick={() => setSelectedCliente(c)}
-                    className="border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors cursor-pointer">
-                    <td className="px-5 py-3.5">
-                      <p className="text-[13px] font-semibold text-slate-900">{c.nombre}</p>
-                      {c.razonSocial && <p className="text-[11px] text-slate-400 mt-0.5">{c.razonSocial}</p>}
-                    </td>
-                    <td className="px-5 py-3.5 text-[13px] text-slate-500">{c.email || '—'}</td>
-                    <td className="px-5 py-3.5 text-[13px] text-slate-500">{c.telefono || '—'}</td>
-                    <td className="px-5 py-3.5">
-                      <span className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-[3px] rounded-full ${
-                        c.tipo === 'B2B' ? 'bg-violet-50 text-violet-600' : 'bg-amber-50 text-amber-600'
-                      }`}>{c.tipo}</span>
-                    </td>
-                    <td className="px-5 py-3.5 text-[13px] font-mono text-slate-500">{c._count?.pedidos ?? 0}</td>
-                    <td className="px-5 py-3.5 text-[12px] text-slate-400">{new Date(c.createdAt).toLocaleDateString('es-AR')}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {/* Cards grid */}
+      {isLoading ? (
+        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-[13px] text-slate-400">Cargando...</div>
+      ) : clientes.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+          <Users size={32} className="text-slate-200 mx-auto mb-3" />
+          <p className="text-[13px] text-slate-400">No hay clientes todavía</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {clientes.map(c => (
+            <div key={c.id} onClick={() => setSelectedCliente(c)}
+              className="bg-white rounded-2xl border border-slate-200 p-5 cursor-pointer hover:border-sky-200 hover:shadow-[0_4px_16px_-4px_rgba(14,165,233,0.12)] transition-all">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-11 h-11 rounded-full flex items-center justify-center text-[15px] font-bold text-white flex-shrink-0"
+                  style={{ background: colorFor(c.nombre) }}>
+                  {initials(c.nombre)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] font-bold text-slate-900 truncate">{c.nombre}</p>
+                  {c.razonSocial && <p className="text-[11px] text-slate-400 truncate">{c.razonSocial}</p>}
+                </div>
+              </div>
+              <div className="space-y-1 mb-4 min-h-[36px]">
+                {c.email && <p className="text-[12px] text-slate-500 truncate">{c.email}</p>}
+                {c.telefono && <p className="text-[12px] text-slate-500">{c.telefono}</p>}
+              </div>
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                <span className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-[3px] rounded-full ${
+                  c.tipo === 'B2B' ? 'bg-sky-50 text-sky-600' : 'bg-purple-50 text-purple-600'
+                }`}>{c.tipo}</span>
+                <div className="flex items-center gap-1.5 text-[12px]">
+                  <Package size={11} className="text-slate-300" />
+                  <span className="font-mono font-semibold text-slate-600">{c._count?.pedidos ?? 0}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Client detail drawer */}
       {selectedCliente && (
@@ -111,8 +111,8 @@ export default function Clientes() {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <p className="font-bold text-slate-900 text-[15px]">{selectedCliente.nombre}</p>
-                  <span className={`inline-flex items-center text-[11px] font-semibold px-2 py-[2px] rounded-full ${
-                    selectedCliente.tipo === 'B2B' ? 'bg-violet-50 text-violet-600' : 'bg-amber-50 text-amber-600'
+                  <span className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-[3px] rounded-full ${
+                    selectedCliente.tipo === 'B2B' ? 'bg-sky-50 text-sky-600' : 'bg-purple-50 text-purple-600'
                   }`}>{selectedCliente.tipo}</span>
                 </div>
                 {selectedCliente.razonSocial && (
