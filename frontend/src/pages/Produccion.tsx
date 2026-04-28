@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { pedidosApi } from '../services/api'
+import { pedidosApi, archivosApi } from '../services/api'
 import { ESTADO_COLORS, ESTADO_LABELS } from '../utils/estados'
-import { Pedido } from '../types'
-import { ClipboardList, Calendar, AlertTriangle } from 'lucide-react'
+import { Pedido, ArchivoAdjunto } from '../types'
+import { ClipboardList, Calendar, AlertTriangle, X, FileText, Image, File } from 'lucide-react'
 
 type Filtro = 'TODOS' | 'CONFIRMADO' | 'EN_PRODUCCION'
 
@@ -31,8 +31,129 @@ function formatFecha(entregaEst?: string) {
   return new Date(entregaEst).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
+function getArchivoIcon(tipo: string) {
+  if (tipo.includes('pdf')) return <FileText size={13} />
+  if (tipo.includes('image')) return <Image size={13} />
+  return <File size={13} />
+}
+
+function PedidoCard({ pedido, onAccion, isPending }: {
+  pedido: Pedido
+  onAccion: (id: number, estado: string) => void
+  isPending: boolean
+}) {
+  const { data: archivos = [] } = useQuery<ArchivoAdjunto[]>({
+    queryKey: ['archivos', pedido.id],
+    queryFn: async () => {
+      const res = await archivosApi.getAll(pedido.id)
+      return res.data
+    }
+  })
+
+  const urgencia = getUrgencia(pedido.entregaEst)
+  const specs = [
+    pedido.largo && pedido.ancho
+      ? `${pedido.largo}×${pedido.ancho}${pedido.alto ? `×${pedido.alto}` : ''} cm`
+      : null,
+    pedido.material || null,
+    pedido.cantidad ? `${pedido.cantidad.toLocaleString('es-AR')} u.` : null,
+  ].filter(Boolean)
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <span className="font-mono text-[20px] font-bold text-slate-900">#{pedido.numeroPedido}</span>
+        <span
+          className="px-2.5 py-1 rounded-full text-[11px] font-semibold"
+          style={{
+            background: ESTADO_COLORS[pedido.estado] + '22',
+            color: ESTADO_COLORS[pedido.estado],
+          }}
+        >
+          {ESTADO_LABELS[pedido.estado]}
+        </span>
+      </div>
+
+      <p className="text-[17px] font-semibold text-slate-800 leading-tight -mt-1">
+        {pedido.cliente.nombre}
+      </p>
+
+      {specs.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {specs.map((spec, i) => (
+            <span key={i} className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[12px] font-medium rounded-lg">
+              {spec}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {pedido.valoresCampos && pedido.valoresCampos.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {pedido.valoresCampos.map(vc => (
+            <span key={vc.id} className="px-2.5 py-1 bg-slate-100 text-slate-500 text-[11px] font-medium rounded-lg">
+              {vc.campo.nombre}: {vc.valor}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl w-fit text-[12px] font-medium ${URGENCIA_STYLES[urgencia]}`}>
+        {urgencia === 'rojo' ? <AlertTriangle size={13} /> : <Calendar size={13} />}
+        <span>
+          {pedido.entregaEst ? `Entrega: ${formatFecha(pedido.entregaEst)}` : 'Sin fecha de entrega'}
+        </span>
+      </div>
+
+      {pedido.notasAdmin && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 text-[12px] text-amber-800 leading-relaxed">
+          <span className="font-semibold">Nota: </span>{pedido.notasAdmin}
+        </div>
+      )}
+
+      {archivos.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">Archivos adjuntos</span>
+          <div className="flex flex-wrap gap-2">
+            {archivos.map(archivo => (
+              <button
+                key={archivo.id}
+                onClick={() => window.open(archivo.url, '_blank')}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-[12px] text-slate-600 cursor-pointer transition-colors"
+              >
+                {getArchivoIcon(archivo.tipo)}
+                <span>{archivo.nombre.length > 20 ? archivo.nombre.slice(0, 20) + '…' : archivo.nombre}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {pedido.estado === 'CONFIRMADO' && (
+        <button
+          onClick={() => onAccion(pedido.id, 'EN_PRODUCCION')}
+          disabled={isPending}
+          className="mt-1 w-full py-3 rounded-xl bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white font-semibold text-[14px] transition-colors disabled:opacity-60"
+        >
+          Iniciar producción
+        </button>
+      )}
+      {pedido.estado === 'EN_PRODUCCION' && (
+        <button
+          onClick={() => onAccion(pedido.id, 'LISTO')}
+          disabled={isPending}
+          className="mt-1 w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-semibold text-[14px] transition-colors disabled:opacity-60"
+        >
+          Marcar como listo
+        </button>
+      )}
+    </div>
+  )
+}
+
 export default function Produccion() {
   const [filtro, setFiltro] = useState<Filtro>('TODOS')
+  const [fechaFiltro, setFechaFiltro] = useState('')
   const queryClient = useQueryClient()
 
   const { data: allPedidos = [], isLoading } = useQuery({
@@ -58,9 +179,13 @@ export default function Produccion() {
       return new Date(a.entregaEst).getTime() - new Date(b.entregaEst).getTime()
     })
 
-  const pedidosFiltrados = filtro === 'TODOS'
-    ? pedidosActivos
-    : pedidosActivos.filter(p => p.estado === filtro)
+  const pedidosFiltrados = pedidosActivos
+    .filter(p => filtro === 'TODOS' || p.estado === filtro)
+    .filter(p => {
+      if (!fechaFiltro) return true
+      if (!p.entregaEst) return false
+      return p.entregaEst.slice(0, 10) <= fechaFiltro
+    })
 
   const filtros: { key: Filtro; label: string }[] = [
     { key: 'TODOS', label: 'Todos' },
@@ -70,7 +195,6 @@ export default function Produccion() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
-      {/* Header */}
       <div className="mb-5">
         <h1 className="text-[22px] font-bold text-slate-900 leading-tight">Cola de producción</h1>
         <p className="text-[13px] text-slate-500 mt-0.5">
@@ -78,8 +202,7 @@ export default function Produccion() {
         </p>
       </div>
 
-      {/* Filtros */}
-      <div className="flex gap-2 mb-5 flex-wrap">
+      <div className="flex gap-2 mb-3 flex-wrap">
         {filtros.map(f => (
           <button
             key={f.key}
@@ -100,7 +223,26 @@ export default function Produccion() {
         ))}
       </div>
 
-      {/* Cards */}
+      <div className="flex items-center gap-2 mb-5">
+        <label className="text-[13px] text-slate-500 font-medium whitespace-nowrap">Entregar antes de:</label>
+        <div className="relative flex items-center">
+          <input
+            type="date"
+            value={fechaFiltro}
+            onChange={e => setFechaFiltro(e.target.value)}
+            className={`h-9 border border-slate-200 rounded-[10px] text-[13px] text-slate-700 bg-white focus:outline-none focus:border-sky-400 ${fechaFiltro ? 'pl-3 pr-8' : 'px-3'}`}
+          />
+          {fechaFiltro && (
+            <button
+              onClick={() => setFechaFiltro('')}
+              className="absolute right-2.5 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      </div>
+
       {isLoading ? (
         <div className="flex items-center justify-center py-16">
           <div className="text-slate-400 text-[13px]">Cargando pedidos…</div>
@@ -115,96 +257,14 @@ export default function Produccion() {
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          {pedidosFiltrados.map(pedido => {
-            const urgencia = getUrgencia(pedido.entregaEst)
-            const specs = [
-              pedido.largo && pedido.ancho
-                ? `${pedido.largo}×${pedido.ancho}${pedido.alto ? `×${pedido.alto}` : ''} cm`
-                : null,
-              pedido.material || null,
-              pedido.cantidad ? `${pedido.cantidad.toLocaleString('es-AR')} u.` : null,
-            ].filter(Boolean)
-
-            return (
-              <div key={pedido.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col gap-3">
-                {/* Top row: número + badge estado */}
-                <div className="flex items-center justify-between gap-3">
-                  <span className="font-mono text-[20px] font-bold text-slate-900">#{pedido.numeroPedido}</span>
-                  <span
-                    className="px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                    style={{
-                      background: ESTADO_COLORS[pedido.estado] + '22',
-                      color: ESTADO_COLORS[pedido.estado],
-                    }}
-                  >
-                    {ESTADO_LABELS[pedido.estado]}
-                  </span>
-                </div>
-
-                {/* Cliente */}
-                <p className="text-[17px] font-semibold text-slate-800 leading-tight -mt-1">
-                  {pedido.cliente.nombre}
-                </p>
-
-                {/* Specs */}
-                {specs.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {specs.map((spec, i) => (
-                      <span key={i} className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[12px] font-medium rounded-lg">
-                        {spec}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {/* Campos custom */}
-                {pedido.valoresCampos && pedido.valoresCampos.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {pedido.valoresCampos.map(vc => (
-                      <span key={vc.id} className="px-2.5 py-1 bg-slate-100 text-slate-500 text-[11px] font-medium rounded-lg">
-                        {vc.campo.nombre}: {vc.valor}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {/* Fecha entrega */}
-                <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl w-fit text-[12px] font-medium ${URGENCIA_STYLES[urgencia]}`}>
-                  {urgencia === 'rojo' ? <AlertTriangle size={13} /> : <Calendar size={13} />}
-                  <span>
-                    {pedido.entregaEst ? `Entrega: ${formatFecha(pedido.entregaEst)}` : 'Sin fecha de entrega'}
-                  </span>
-                </div>
-
-                {/* Notas internas */}
-                {pedido.notasAdmin && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 text-[12px] text-amber-800 leading-relaxed">
-                    <span className="font-semibold">Nota: </span>{pedido.notasAdmin}
-                  </div>
-                )}
-
-                {/* Botón acción */}
-                {pedido.estado === 'CONFIRMADO' && (
-                  <button
-                    onClick={() => mutation.mutate({ id: pedido.id, estado: 'EN_PRODUCCION' })}
-                    disabled={mutation.isPending}
-                    className="mt-1 w-full py-3 rounded-xl bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white font-semibold text-[14px] transition-colors disabled:opacity-60"
-                  >
-                    Iniciar producción
-                  </button>
-                )}
-                {pedido.estado === 'EN_PRODUCCION' && (
-                  <button
-                    onClick={() => mutation.mutate({ id: pedido.id, estado: 'LISTO' })}
-                    disabled={mutation.isPending}
-                    className="mt-1 w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-semibold text-[14px] transition-colors disabled:opacity-60"
-                  >
-                    Marcar como listo
-                  </button>
-                )}
-              </div>
-            )
-          })}
+          {pedidosFiltrados.map(pedido => (
+            <PedidoCard
+              key={pedido.id}
+              pedido={pedido}
+              onAccion={(id, estado) => mutation.mutate({ id, estado })}
+              isPending={mutation.isPending}
+            />
+          ))}
         </div>
       )}
     </div>
