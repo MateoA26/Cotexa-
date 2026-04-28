@@ -178,8 +178,9 @@ function printQuote(pedido: Pedido, empresaLogoUrl?: string, empresaNombre?: str
     .footer{margin-top:48px;padding-top:16px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;font-size:10px;color:#cbd5e1;font-weight:500}
 
     @media print{
-      body{padding:0}
-      .page{padding:28px 32px}
+      @page{margin:0;size:A4}
+      body{padding:0;margin:0}
+      .page{padding:32px 40px}
       .total-section{-webkit-print-color-adjust:exact;print-color-adjust:exact}
       .client-card{-webkit-print-color-adjust:exact;print-color-adjust:exact}
       .divider{-webkit-print-color-adjust:exact;print-color-adjust:exact}
