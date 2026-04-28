@@ -87,4 +87,16 @@ export const camposApi = {
   delete: (id: number) => api.delete(`/campos/${id}`)
 }
 
+export const archivosApi = {
+  getAll: (pedidoId: number) => api.get(`/archivos/${pedidoId}`),
+  upload: (pedidoId: number, file: File) => {
+    const form = new FormData()
+    form.append('archivo', file)
+    return api.post(`/archivos/${pedidoId}`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
+  delete: (archivoId: number) => api.delete(`/archivos/${archivoId}`),
+}
+
 export default api

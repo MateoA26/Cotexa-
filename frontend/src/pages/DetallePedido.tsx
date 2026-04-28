@@ -1,10 +1,21 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { pedidosApi, camposApi } from '../services/api'
-import { Pedido, CampoCustom } from '../types'
+import { pedidosApi, camposApi, archivosApi } from '../services/api'
+import { Pedido, CampoCustom, ArchivoAdjunto } from '../types'
 import { ESTADO_LABELS, ESTADO_COLORS, ESTADOS_ORDEN } from '../utils/estados'
-import { ArrowLeft, Edit2, Download, Calculator, FileText, Clock, CheckCircle2, Package, Truck, XCircle } from 'lucide-react'
+import { ArrowLeft, Edit2, Download, Calculator, FileText, Clock, CheckCircle2, Package, Truck, XCircle, Upload, Trash2, Image as ImageIcon, File as FileIcon } from 'lucide-react'
+
+const formatSize = (bytes: number) => {
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+const getFileIcon = (tipo: string) => {
+  if (tipo.startsWith('image/')) return ImageIcon
+  if (tipo === 'application/pdf') return FileText
+  return FileIcon
+}
 
 const PRECIO_BASE = 150
 const MATERIALES = ['Cartón corrugado', 'Cartón microcorrugado', 'Kraft', 'Cartulina', 'Otro']
@@ -174,6 +185,11 @@ export default function DetallePedido() {
   const [notasAdmin, setNotasAdmin] = useState('')
   const [notasSaved, setNotasSaved] = useState(false)
 
+  const [isDragOver, setIsDragOver] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const [isEditing, setIsEditing] = useState(false)
   const [editLargo, setEditLargo] = useState('')
   const [editAncho, setEditAncho] = useState('')
@@ -202,6 +218,16 @@ export default function DetallePedido() {
     queryKey: ['campos'],
     queryFn: () => camposApi.getAll().then(r => r.data),
     enabled: isEditing,
+  })
+
+  const { data: archivos = [] } = useQuery<ArchivoAdjunto[]>({
+    queryKey: ['archivos', id],
+    queryFn: () => archivosApi.getAll(Number(id)).then(r => r.data),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (archivoId: number) => archivosApi.delete(archivoId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['archivos', id] }),
   })
 
   const mutation = useMutation({
@@ -261,6 +287,27 @@ export default function DetallePedido() {
     await mutation.mutateAsync({ notasAdmin })
     setNotasSaved(true)
     setTimeout(() => setNotasSaved(false), 2000)
+  }
+
+  const handleFiles = async (files: FileList | File[]) => {
+    const MAX = 10 * 1024 * 1024
+    const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+    const valid = Array.from(files).filter(f => ALLOWED.includes(f.type) && f.size <= MAX)
+    if (!valid.length) {
+      setUploadError('Formato o tamaño no válido. Aceptamos JPG, PNG, WebP, PDF hasta 10MB.')
+      setTimeout(() => setUploadError(null), 3000)
+      return
+    }
+    setIsUploading(true)
+    try {
+      await Promise.all(valid.map(f => archivosApi.upload(Number(id), f)))
+      queryClient.invalidateQueries({ queryKey: ['archivos', id] })
+    } catch {
+      setUploadError('Error al subir el archivo.')
+      setTimeout(() => setUploadError(null), 3000)
+    } finally {
+      setIsUploading(false)
+    }
   }
 
   if (isLoading) return <div className="p-8 text-[13px] text-slate-400">Cargando...</div>
@@ -569,6 +616,81 @@ export default function DetallePedido() {
             <span className="text-slate-700">{pedido.notasCliente}</span>
           </div>
         )}
+      </div>
+
+      {/* Archivos adjuntos */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-4">
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">Archivos adjuntos</p>
+          {archivos.length > 0 && (
+            <span className="text-[11px] text-slate-400 font-medium">
+              {archivos.length} {archivos.length === 1 ? 'archivo' : 'archivos'}
+            </span>
+          )}
+        </div>
+
+        {archivos.length > 0 && (
+          <div className="space-y-2 mb-4">
+            {archivos.map(archivo => {
+              const FIcon = getFileIcon(archivo.tipo)
+              return (
+                <div key={archivo.id} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 group">
+                  <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center flex-shrink-0">
+                    <FIcon size={14} className="text-slate-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-medium text-slate-900 truncate">{archivo.nombre}</p>
+                    <p className="text-[11px] text-slate-400">{formatSize(archivo.tamanio)}</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <a href={archivo.url} target="_blank" rel="noopener noreferrer"
+                      className="p-1.5 text-slate-400 hover:text-sky-500 rounded-lg transition-colors">
+                      <Download size={13} />
+                    </a>
+                    <button
+                      onClick={() => deleteMutation.mutate(archivo.id)}
+                      disabled={deleteMutation.isPending}
+                      className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg transition-colors disabled:opacity-40">
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {uploadError && (
+          <p className="text-[12px] text-red-500 mb-3 px-1">{uploadError}</p>
+        )}
+
+        <div
+          className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer ${
+            isDragOver ? 'border-sky-300 bg-sky-50/50' : 'border-slate-200 hover:border-sky-300 hover:bg-sky-50/30'
+          } ${isUploading ? 'opacity-60 pointer-events-none' : ''}`}
+          onDragOver={e => { e.preventDefault(); setIsDragOver(true) }}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={e => { e.preventDefault(); setIsDragOver(false); handleFiles(e.dataTransfer.files) }}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".jpg,.jpeg,.png,.webp,.pdf"
+            className="hidden"
+            onChange={e => { if (e.target.files) { handleFiles(e.target.files); e.target.value = '' } }}
+          />
+          {isUploading ? (
+            <p className="text-[13px] text-slate-400">Subiendo...</p>
+          ) : (
+            <>
+              <Upload size={20} className="mx-auto text-slate-300 mb-2" />
+              <p className="text-[13px] text-slate-400">Arrastrá archivos acá o <span className="text-sky-500 font-medium">seleccioná</span></p>
+              <p className="text-[11px] text-slate-300 mt-1">JPG, PNG, WebP, PDF — máx. 10MB</p>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Historial */}

@@ -72,6 +72,16 @@ export interface Pedido {
   valoresCampos?: ValorCampo[]
 }
 
+export interface ArchivoAdjunto {
+  id: number
+  pedidoId: number
+  nombre: string
+  url: string
+  tipo: string
+  tamanio: number
+  createdAt: string
+}
+
 export interface Notificacion {
   id: number
   empresaId: number

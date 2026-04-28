@@ -94,6 +94,7 @@ model Pedido {
   eventos       EventoTracking[]
   valoresCampos ValorCampo[]
   notificaciones Notificacion[]
+  archivos      ArchivoAdjunto[]
 }
 
 model EventoTracking {
@@ -154,4 +155,17 @@ model ValorCampo {
 
   pedido Pedido      @relation(fields: [pedidoId], references: [id])
   campo  CampoCustom @relation(fields: [campoId], references: [id])
+}
+
+model ArchivoAdjunto {
+  id          Int      @id @default(autoincrement())
+  pedidoId    Int
+  nombre      String
+  url         String
+  tipo        String
+  tamanio     Int
+  storagePath String
+  createdAt   DateTime @default(now())
+
+  pedido Pedido @relation(fields: [pedidoId], references: [id])
 }
