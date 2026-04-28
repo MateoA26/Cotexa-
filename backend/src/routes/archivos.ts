@@ -37,7 +37,7 @@ router.get('/:pedidoId', requireAuth, async (req: AuthRequest, res: Response) =>
       archivos.map(async (archivo) => {
         const { data } = await supabase.storage
           .from(BUCKET)
-          .createSignedUrl(archivo.storagePath, 3600)
+          .createSignedUrl(archivo.storagePath, 604800)
         return { ...archivo, url: data?.signedUrl || archivo.url }
       })
     )
@@ -72,7 +72,7 @@ router.post('/:pedidoId', requireAuth, upload.single('archivo'), async (req: Aut
 
     const { data: signedData } = await supabase.storage
       .from(BUCKET)
-      .createSignedUrl(storagePath, 3600)
+      .createSignedUrl(storagePath, 604800)
 
     const archivo = await prisma.archivoAdjunto.create({
       data: {
