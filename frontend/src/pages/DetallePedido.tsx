@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { pedidosApi, camposApi, archivosApi } from '../services/api'
+import { pedidosApi, camposApi, archivosApi, empresaApi } from '../services/api'
 import { Pedido, CampoCustom, ArchivoAdjunto } from '../types'
 import { ESTADO_LABELS, ESTADO_COLORS, ESTADOS_ORDEN } from '../utils/estados'
-import { ArrowLeft, Edit2, Download, Calculator, FileText, Clock, CheckCircle2, Package, Truck, XCircle, Upload, Trash2, Image as ImageIcon, File as FileIcon } from 'lucide-react'
+import { ArrowLeft, Edit2, Download, Calculator, FileText, Clock, CheckCircle2, Package, Truck, XCircle, Upload, Trash2, Image as ImageIcon, File as FileIcon, MessageSquare } from 'lucide-react'
 
 const formatSize = (bytes: number) => {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -86,8 +86,10 @@ function calcularPrecio(
   return { unitario: Math.round(precio), total: Math.round(precio * cantidad), descuento, breakdown }
 }
 
-function printQuote(pedido: Pedido) {
-  const logoUrl = `${window.location.origin}/Imagenes/Copia de Logo fondo azul.png`
+function printQuote(pedido: Pedido, empresaLogoUrl?: string, empresaNombre?: string) {
+  const fallbackLogo = `${window.location.origin}/Imagenes/Copia de Logo fondo azul.png`
+  const logoSrc = empresaLogoUrl || fallbackLogo
+  const companyName = empresaNombre || 'Cotexa'
   const win = window.open('', '_blank', 'width=850,height=700')
   if (!win) return
 
@@ -99,7 +101,7 @@ function printQuote(pedido: Pedido) {
     pedido.largo != null ? ['Medidas', `${pedido.largo} × ${pedido.ancho} × ${pedido.alto} cm`] : null,
     pedido.material ? ['Material', pedido.material] : null,
     ['Impresión', impLabel],
-    pedido.cantidad != null ? ['Cantidad', `${pedido.cantidad.toLocaleString('es-AR')} u.`] : null,
+    pedido.cantidad != null ? ['Cantidad', `${pedido.cantidad.toLocaleString('es-AR')} unidades`] : null,
     ['Entrega estimada', entrega],
   ].filter(Boolean) as string[][]
 
@@ -111,65 +113,97 @@ function printQuote(pedido: Pedido) {
     `<tr><td class="lc">${vc.campo.nombre}</td><td class="vc">${vc.valor === 'true' ? 'Sí' : vc.valor === 'false' ? 'No' : vc.valor}</td></tr>`
   ).join('')
 
+  const unitario = pedido.precioTotal && pedido.cantidad
+    ? Math.round(pedido.precioTotal / pedido.cantidad)
+    : null
+
   win.document.write(`<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8"/>
-  <title>Cotización #${pedido.numeroPedido} — Cotexa</title>
+  <title>Cotización #${pedido.numeroPedido} — ${companyName}</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#111827;padding:40px 48px;background:#fff}
-    .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;border-bottom:2px solid #0284c7;margin-bottom:28px}
-    .logo{height:44px;width:auto;object-fit:contain}
+    body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#0f172a;padding:40px 48px;background:#fff}
+    .header{display:flex;justify-content:space-between;align-items:center;padding-bottom:24px;border-bottom:3px solid #0ea5e9;margin-bottom:30px}
+    .logo{height:48px;width:auto;object-fit:contain}
+    .company-name{font-size:20px;font-weight:800;color:#0f172a}
     .title-block{text-align:right}
-    .doc-title{font-size:24px;font-weight:800;color:#0284c7;letter-spacing:-0.5px}
-    .doc-meta{font-size:12px;color:#6b7280;margin-top:4px}
-    .badge{display:inline-block;margin-top:6px;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:600;background:#e0f2fe;color:#0369a1}
-    .sec{margin-bottom:22px}
-    .sec-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#9ca3af;margin-bottom:8px}
-    .card{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px}
-    .cn{font-size:15px;font-weight:700}
-    .cs{font-size:12px;color:#6b7280;margin-top:3px}
+    .doc-title{font-size:26px;font-weight:800;color:#0ea5e9;letter-spacing:-0.5px}
+    .doc-meta{font-size:12px;color:#64748b;margin-top:4px}
+    .badge{display:inline-block;margin-top:8px;padding:3px 12px;border-radius:99px;font-size:11px;font-weight:700;background:#e0f2fe;color:#0369a1;letter-spacing:.05em}
+    .sec{margin-bottom:24px}
+    .sec-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#94a3b8;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #f1f5f9}
+    .client-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px}
+    .cn{font-size:16px;font-weight:700;color:#0f172a}
+    .cs{font-size:12px;color:#475569;margin-top:5px}
+    .cuit{font-size:11px;color:#94a3b8;font-family:monospace;margin-top:3px}
     table{width:100%;border-collapse:collapse}
-    .lc{width:40%;padding:8px 10px;font-size:12px;color:#6b7280;border-bottom:1px solid #f3f4f6}
-    .vc{padding:8px 10px;font-size:13px;font-weight:500;border-bottom:1px solid #f3f4f6}
-    .total{display:flex;justify-content:flex-end;align-items:center;gap:16px;margin-top:24px;padding-top:20px;border-top:2px solid #0284c7}
-    .tl{font-size:14px;font-weight:600;color:#374151}
-    .ta{font-size:28px;font-weight:800;color:#0284c7}
-    .notes{font-size:12px;color:#4b5563;font-style:italic;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px}
-    .footer{margin-top:40px;padding-top:14px;border-top:1px solid #e5e7eb;text-align:center;font-size:10px;color:#9ca3af}
+    .lc{width:42%;padding:9px 10px;font-size:12px;color:#64748b;border-bottom:1px solid #f1f5f9}
+    .vc{padding:9px 10px;font-size:13px;font-weight:500;color:#0f172a;border-bottom:1px solid #f1f5f9}
+    .price-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px;margin-top:8px}
+    .pr{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px;border-bottom:1px solid #f1f5f9}
+    .pr:last-child{border-bottom:none}
+    .pl{color:#64748b}
+    .pv{font-weight:600;font-family:monospace;color:#0f172a}
+    .total-row{display:flex;justify-content:space-between;align-items:center;padding-top:16px;margin-top:16px;border-top:3px solid #0ea5e9}
+    .total-label{font-size:15px;font-weight:700;color:#0f172a}
+    .total-amount{font-size:30px;font-weight:800;color:#0ea5e9;font-family:monospace}
+    .notes{font-size:12px;color:#475569;font-style:italic;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:14px 16px;line-height:1.6}
+    .footer{margin-top:40px;padding-top:16px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:10px;color:#94a3b8}
     @media print{body{padding:20px 28px}}
   </style>
 </head>
 <body>
   <div class="header">
-    <img src="${logoUrl}" class="logo" alt="Cotexa" onerror="this.style.display='none'"/>
+    <div>
+      <img src="${logoSrc}" class="logo" alt="${companyName}" onerror="this.style.display='none';document.getElementById('cname').style.display='block'"/>
+      <div id="cname" style="display:none" class="company-name">${companyName}</div>
+    </div>
     <div class="title-block">
       <div class="doc-title">COTIZACIÓN</div>
       <div class="doc-meta">N° ${pedido.numeroPedido} &nbsp;·&nbsp; ${fecha}</div>
       <span class="badge">${ESTADO_LABELS[pedido.estado] || pedido.estado}</span>
     </div>
   </div>
+
   <div class="sec">
     <div class="sec-title">Cliente</div>
-    <div class="card">
+    <div class="client-card">
       <div class="cn">${pedido.cliente.nombre}</div>
       ${pedido.cliente.razonSocial ? `<div class="cs">${pedido.cliente.razonSocial}</div>` : ''}
-      ${pedido.cliente.email ? `<div class="cs">${pedido.cliente.email}</div>` : ''}
-      ${pedido.cliente.telefono ? `<div class="cs">${pedido.cliente.telefono}</div>` : ''}
+      ${(pedido.cliente as any).cuit ? `<div class="cuit">CUIT: ${(pedido.cliente as any).cuit}</div>` : ''}
+      ${pedido.cliente.email ? `<div class="cs">✉ ${pedido.cliente.email}</div>` : ''}
+      ${pedido.cliente.telefono ? `<div class="cs">📞 ${pedido.cliente.telefono}</div>` : ''}
     </div>
   </div>
+
   <div class="sec">
-    <div class="sec-title">Especificaciones</div>
+    <div class="sec-title">Especificaciones del pedido</div>
     <table><tbody>${specHtml}</tbody></table>
   </div>
+
   ${camposHtml ? `<div class="sec"><div class="sec-title">Opciones adicionales</div><table><tbody>${camposHtml}</tbody></table></div>` : ''}
+
   ${pedido.notasCliente ? `<div class="sec"><div class="sec-title">Notas del pedido</div><div class="notes">${pedido.notasCliente}</div></div>` : ''}
-  <div class="total">
-    <span class="tl">Total estimado</span>
-    <span class="ta">$${pedido.precioTotal?.toLocaleString('es-AR') || '—'}</span>
+
+  <div class="sec">
+    <div class="sec-title">Precio estimado</div>
+    <div class="price-box">
+      ${pedido.precioBase != null ? `<div class="pr"><span class="pl">Precio base</span><span class="pv">$${pedido.precioBase.toLocaleString('es-AR')}/u</span></div>` : ''}
+      ${unitario != null && pedido.precioBase != null && unitario !== pedido.precioBase ? `<div class="pr"><span class="pl">Precio unitario final</span><span class="pv">$${unitario.toLocaleString('es-AR')}/u</span></div>` : ''}
+      ${pedido.cantidad ? `<div class="pr"><span class="pl">Cantidad</span><span class="pv">${pedido.cantidad.toLocaleString('es-AR')} u.</span></div>` : ''}
+    </div>
+    <div class="total-row">
+      <span class="total-label">Total estimado</span>
+      <span class="total-amount">$${pedido.precioTotal?.toLocaleString('es-AR') || '—'}</span>
+    </div>
   </div>
-  <div class="footer">Cotexa · Plataforma de gestión de pedidos y cotizaciones · Este documento es una cotización, no una factura.</div>
+
+  <div class="footer">
+    <span>${companyName} · Plataforma de gestión de pedidos y cotizaciones</span>
+    <span>Este documento es una cotización, no una factura.</span>
+  </div>
 </body>
 </html>`)
   win.document.close()
@@ -223,6 +257,11 @@ export default function DetallePedido() {
   const { data: archivos = [] } = useQuery<ArchivoAdjunto[]>({
     queryKey: ['archivos', id],
     queryFn: () => archivosApi.getAll(Number(id)).then(r => r.data),
+  })
+
+  const { data: empresa } = useQuery({
+    queryKey: ['empresa'],
+    queryFn: () => empresaApi.get().then(r => r.data),
   })
 
   const deleteMutation = useMutation({
@@ -348,7 +387,7 @@ export default function DetallePedido() {
               <span className="hidden sm:inline">Editar</span>
             </button>
           )}
-          <button onClick={() => printQuote(pedido)}
+          <button onClick={() => printQuote(pedido, empresa?.logoUrl, empresa?.nombre)}
             className="flex items-center gap-1.5 h-9 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-[10px] text-[13px] font-semibold transition-colors">
             <Download size={13} />
             PDF
@@ -559,6 +598,12 @@ export default function DetallePedido() {
                     <span className="font-bold text-sky-600 font-mono">${pedido.precioTotal.toLocaleString('es-AR')}</span>
                   </div>
                 )}
+                {pedido.notasCliente && (
+                  <div className="border-t border-slate-100 pt-2.5 mt-2.5">
+                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">Notas del pedido</p>
+                    <p className="text-[13px] text-slate-700 leading-relaxed">{pedido.notasCliente}</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -611,9 +656,12 @@ export default function DetallePedido() {
           </div>
         </div>
         {pedido.notasCliente && (
-          <div className="mt-3 text-[13px] bg-slate-50 rounded-xl p-3">
-            <span className="text-slate-400 text-[11px] font-semibold uppercase tracking-widest">Notas: </span>
-            <span className="text-slate-700">{pedido.notasCliente}</span>
+          <div className="mt-4 flex items-start gap-3 bg-sky-50 border border-sky-100 rounded-xl p-3.5">
+            <MessageSquare size={14} className="text-sky-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-[10px] font-semibold text-sky-500 uppercase tracking-widest mb-1">Notas del cliente</p>
+              <p className="text-[13px] text-slate-700 leading-relaxed">{pedido.notasCliente}</p>
+            </div>
           </div>
         )}
       </div>

@@ -14,6 +14,7 @@ model Empresa {
   activa    Boolean  @default(true)
   email     String?
   telefono  String?
+  logoUrl   String?
   createdAt DateTime @default(now())
 
   usuarios       Usuario[]

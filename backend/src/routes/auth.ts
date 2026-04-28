@@ -16,10 +16,11 @@ router.get('/empresa', requireAuth, async (req: AuthRequest, res: Response) => {
 
 router.patch('/empresa/me', requireAuth, async (req: AuthRequest, res: Response) => {
   if (!req.user?.empresaId) return res.status(403).json({ error: 'Sin empresa' })
-  const { nombre, email } = req.body
+  const { nombre, email, logoUrl } = req.body
   const data: any = {}
   if (nombre !== undefined) data.nombre = nombre
   if (email !== undefined) data.email = email
+  if (logoUrl !== undefined) data.logoUrl = logoUrl
   const empresa = await prisma.empresa.update({
     where: { id: req.user.empresaId },
     data
