@@ -92,7 +92,7 @@ export default function Layout() {
       } style={{ background: '#0f172a' }}>
 
         {/* Logo */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-sky-500/40">
           <div className="flex items-center gap-3">
             <img src="/Imagenes/isotipo.png" alt="Cotexa" className="w-8 h-8 object-contain" />
             <span className="text-white text-[15px] font-bold tracking-tight">Cotexa</span>
