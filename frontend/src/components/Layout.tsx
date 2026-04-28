@@ -87,8 +87,8 @@ export default function Layout() {
 
       <aside className={
         sidebarOpen
-          ? 'fixed inset-y-0 left-0 z-30 w-[220px] flex flex-col flex-shrink-0 transition-transform duration-200 ease-in-out translate-x-0 md:relative md:translate-x-0'
-          : 'fixed inset-y-0 left-0 z-30 w-[220px] flex flex-col flex-shrink-0 transition-transform duration-200 ease-in-out -translate-x-full md:relative md:translate-x-0'
+          ? 'fixed inset-y-0 left-0 z-30 w-[220px] flex flex-col flex-shrink-0 transition-transform duration-200 ease-in-out translate-x-0 md:sticky md:top-0 md:h-screen md:translate-x-0'
+          : 'fixed inset-y-0 left-0 z-30 w-[220px] flex flex-col flex-shrink-0 transition-transform duration-200 ease-in-out -translate-x-full md:sticky md:top-0 md:h-screen md:translate-x-0'
       } style={{ background: '#0f172a' }}>
 
         {/* Logo */}
