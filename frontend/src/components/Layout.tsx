@@ -145,18 +145,18 @@ export default function Layout() {
         </header>
 
         {/* Desktop topbar */}
-        <header className="hidden md:flex items-center justify-between px-7 py-3 bg-white border-b border-slate-200 flex-shrink-0">
+        <header className="hidden md:flex items-center justify-between px-7 py-3 flex-shrink-0" style={{ background: '#0f172a' }}>
           <div className="relative" ref={searchRef}>
-            <div className="flex items-center gap-2 px-3.5 py-2 rounded-[10px] bg-slate-50 border border-slate-200 w-[320px] text-slate-400">
-              <Search size={14} />
+            <div className="flex items-center gap-2 px-3.5 py-2 rounded-[10px] w-[320px]"
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
+              <Search size={14} className="flex-shrink-0" style={{ color: 'rgba(255,255,255,0.5)' }} />
               <input
                 placeholder="Buscar pedidos, clientes..."
-                className="flex-1 bg-transparent outline-none text-[13px] text-slate-900 placeholder-slate-400"
+                className="flex-1 bg-transparent outline-none text-[13px] text-white placeholder-white/50"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 onFocus={() => setSearchOpen(true)}
               />
-              <kbd className="text-[10px] px-1.5 py-0.5 border border-slate-200 rounded bg-white font-mono text-slate-400">⌘K</kbd>
             </div>
 
             {searchOpen && searchQuery.trim() && (
@@ -228,8 +228,8 @@ export default function Layout() {
           <div className="flex items-center gap-3">
             <NotificationBell />
             <div className="text-right">
-              <p className="text-[13px] font-medium text-slate-900">{user?.nombre}</p>
-              <p className="text-[11px] text-slate-400">{user?.email}</p>
+              <p className="text-[13px] font-medium text-white">{user?.nombre}</p>
+              <p className="text-[11px] text-white/50">{user?.email}</p>
             </div>
           </div>
         </header>
