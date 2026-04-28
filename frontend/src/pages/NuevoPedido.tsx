@@ -143,20 +143,20 @@ export default function NuevoPedido() {
     setBreakdown(result.breakdown)
   }, [cantidad, materialId, valoresCampos, campos, precioConfig, materiales, tramos, selectedMaterial])
 
-  const ic = "w-full h-11 px-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
-  const lc = "block text-xs font-medium text-gray-500 mb-1.5"
+  const ic = 'w-full h-10 px-3 border border-slate-200 rounded-[10px] text-[13px] focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white'
+  const lc = 'block text-[11px] font-semibold text-slate-500 uppercase tracking-widest mb-1.5'
   const canSubmit = !!clienteId && !mutation.isPending
 
   return (
-    <div className="p-4 md:p-6 max-w-6xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
+    <div className="max-w-[1360px] mx-auto px-6 py-7">
+      <div className="flex items-center gap-3 mb-7">
         <button onClick={() => navigate('/pedidos')}
-          className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-          <ArrowLeft size={17} />
+          className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
+          <ArrowLeft size={16} />
         </button>
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Nuevo pedido</h1>
-          <p className="text-sm text-gray-400">Completá los datos y cotizá en tiempo real</p>
+          <h1 className="text-[22px] font-bold text-slate-900 tracking-tight">Nuevo pedido</h1>
+          <p className="text-[13px] text-slate-400 mt-0.5">Completá los datos y cotizá en tiempo real</p>
         </div>
       </div>
 
@@ -164,8 +164,8 @@ export default function NuevoPedido() {
         <div className="lg:col-span-2 space-y-4">
 
           {/* Cliente */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Cliente</p>
+          <div className="bg-white rounded-2xl border border-slate-200 p-5">
+            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">Cliente</p>
             <label className={lc}>Seleccionar cliente *</label>
             <select value={clienteId} onChange={e => setClienteId(e.target.value)} className={ic}>
               <option value="">— Elegir cliente —</option>
@@ -178,8 +178,8 @@ export default function NuevoPedido() {
           </div>
 
           {/* Especificaciones */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Especificaciones</p>
+          <div className="bg-white rounded-2xl border border-slate-200 p-5">
+            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">Especificaciones</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
               {[['Largo (cm)', largo, setLargo], ['Ancho (cm)', ancho, setAncho], ['Alto (cm)', alto, setAlto]].map(([label, val, setter]) => (
                 <div key={label as string}>
@@ -202,14 +202,14 @@ export default function NuevoPedido() {
                   ))}
                 </select>
                 {materiales.length === 0 && (
-                  <p className="text-xs text-gray-400 mt-1">Configurá materiales en Configuración →</p>
+                  <p className="text-[11px] text-slate-400 mt-1">Configurá materiales en Configuración →</p>
                 )}
               </div>
               <div>
                 <label className={lc}>Cantidad de unidades</label>
                 <input type="number" value={cantidad} onChange={e => setCantidad(e.target.value)} min="1" className={ic} />
                 {descuentoPct > 0 && (
-                  <p className="text-xs text-emerald-600 mt-1">✓ Descuento por volumen: -{descuentoPct}%</p>
+                  <p className="text-[11px] text-emerald-600 mt-1 font-medium">✓ Descuento por volumen: -{descuentoPct}%</p>
                 )}
               </div>
             </div>
@@ -221,15 +221,15 @@ export default function NuevoPedido() {
 
           {/* Campos custom */}
           {campos.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Opciones adicionales</p>
+            <div className="bg-white rounded-2xl border border-slate-200 p-5">
+              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">Opciones adicionales</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {campos.map(campo => (
                   <div key={campo.id}>
                     <label className={lc}>
                       {campo.nombre}
-                      {campo.impactoTipo === 'PORCENTAJE' && <span className="text-gray-300 ml-1">(+{campo.impactoValor}%)</span>}
-                      {campo.impactoTipo === 'FIJO' && <span className="text-gray-300 ml-1">(+${campo.impactoValor})</span>}
+                      {campo.impactoTipo === 'PORCENTAJE' && <span className="text-slate-300 ml-1 font-normal normal-case tracking-normal">(+{campo.impactoValor}%)</span>}
+                      {campo.impactoTipo === 'FIJO' && <span className="text-slate-300 ml-1 font-normal normal-case tracking-normal">(+${campo.impactoValor})</span>}
                     </label>
                     {campo.tipo === 'BOOLEAN' ? (
                       <select value={valoresCampos[campo.id] || 'false'}
@@ -254,69 +254,69 @@ export default function NuevoPedido() {
           )}
 
           {/* Notas */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="bg-white rounded-2xl border border-slate-200 p-5">
             <label className={lc}>Notas del pedido</label>
             <textarea value={notasCliente} onChange={e => setNotasCliente(e.target.value)}
               rows={3} placeholder="Colores Pantone, detalles del logo, arte adjunto..."
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none" />
+              className="w-full px-3 py-2.5 border border-slate-200 rounded-[10px] text-[13px] focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none bg-white" />
           </div>
         </div>
 
         {/* Cotización en tiempo real */}
         <div>
-          <div className="bg-white rounded-xl border border-gray-200 p-5 lg:sticky lg:top-6">
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 lg:sticky lg:top-6">
             <div className="flex items-center gap-2 mb-5">
-              <Calculator size={15} className="text-sky-500" />
-              <p className="text-sm font-semibold text-gray-900">Cotización en tiempo real</p>
+              <Calculator size={14} className="text-sky-500" />
+              <p className="text-[13px] font-semibold text-slate-900">Cotización en tiempo real</p>
             </div>
 
             <div className="mb-5">
               {breakdown.length > 0 ? (
                 <div className="space-y-1.5 mb-3">
                   {breakdown.map((item, i) => (
-                    <div key={i} className="flex justify-between text-sm">
-                      <span className={item.delta < 0 ? 'text-emerald-600' : i === 0 ? 'text-gray-500' : 'text-gray-400'}>
+                    <div key={i} className="flex justify-between text-[13px]">
+                      <span className={item.delta < 0 ? 'text-emerald-600' : i === 0 ? 'text-slate-500' : 'text-slate-400'}>
                         {i > 0 && item.delta >= 0 ? '+ ' : ''}{item.label}
                       </span>
-                      <span className={`font-medium ${item.delta < 0 ? 'text-emerald-600' : 'text-gray-700'}`}>
+                      <span className={`font-semibold font-mono ${item.delta < 0 ? 'text-emerald-600' : 'text-slate-700'}`}>
                         {item.delta < 0 ? '-' : i > 0 ? '+' : ''}${Math.abs(item.delta).toLocaleString('es-AR')}
                       </span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-gray-400 mb-3">Configurá el precio base en Configuración para ver el desglose</p>
+                <p className="text-[12px] text-slate-400 mb-3">Configurá el precio base en Configuración para ver el desglose</p>
               )}
-              <div className="border-t border-gray-100 pt-2.5 space-y-1">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Precio unitario</span>
-                  <span className="font-semibold text-gray-900">${precioUnitario.toLocaleString('es-AR')}/u</span>
+              <div className="border-t border-slate-100 pt-2.5 space-y-1">
+                <div className="flex justify-between text-[13px]">
+                  <span className="text-slate-500">Precio unitario</span>
+                  <span className="font-semibold text-slate-900 font-mono">${precioUnitario.toLocaleString('es-AR')}/u</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">× {Number(cantidad).toLocaleString('es-AR')} unidades</span>
+                <div className="flex justify-between text-[13px]">
+                  <span className="text-slate-400">× {Number(cantidad).toLocaleString('es-AR')} unidades</span>
                 </div>
               </div>
-              <div className="border-t border-gray-100 mt-2.5 pt-2.5 flex justify-between items-baseline">
-                <span className="text-sm font-semibold text-gray-900">Total estimado</span>
-                <span className="text-2xl font-bold text-sky-600">${precioTotal.toLocaleString('es-AR')}</span>
+              <div className="border-t border-slate-100 mt-2.5 pt-2.5 flex justify-between items-baseline">
+                <span className="text-[13px] font-semibold text-slate-900">Total estimado</span>
+                <span className="text-[24px] font-bold text-sky-600 font-mono">${precioTotal.toLocaleString('es-AR')}</span>
               </div>
             </div>
 
             {!clienteId && (
-              <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2 mb-4">
+              <p className="text-[12px] text-amber-600 bg-amber-50 rounded-xl px-3 py-2 mb-4 font-medium">
                 Seleccioná un cliente para continuar
               </p>
             )}
 
             <div className="space-y-2">
               <button onClick={() => mutation.mutate('COTIZACION')} disabled={!canSubmit}
-                className="w-full h-11 flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-40">
-                <Save size={14} />
+                className="w-full h-10 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-[10px] text-[13px] font-semibold transition-colors disabled:opacity-40">
+                <Save size={13} />
                 Guardar cotización
               </button>
               <button onClick={() => mutation.mutate('CONFIRMADO')} disabled={!canSubmit}
-                className="w-full h-11 flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-40">
-                <CheckCircle size={14} />
+                className="w-full h-10 flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-600 text-white rounded-[10px] text-[13px] font-semibold transition-colors disabled:opacity-40 shadow-[0_4px_12px_-4px_rgba(14,165,233,0.45)]">
+                <CheckCircle size={13} />
                 Confirmar pedido
               </button>
             </div>

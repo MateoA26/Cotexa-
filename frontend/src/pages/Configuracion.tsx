@@ -239,83 +239,69 @@ export default function Configuracion() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tramos'] }),
   })
 
-  const ic = 'w-full h-10 px-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500'
-  const lc = 'block text-xs font-medium text-gray-600 mb-1'
+  const ic = 'w-full h-10 px-3 border border-slate-200 rounded-[10px] text-[13px] focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white'
+  const lc = 'block text-[11px] font-semibold text-slate-500 uppercase tracking-widest mb-1.5'
 
   if (!user || (user.role !== 'ADMIN' && user.role !== 'SUPERADMIN')) {
     return (
-      <div className="p-8 text-center text-sm text-gray-400">
+      <div className="p-8 text-center text-[13px] text-slate-400">
         No tenés permisos para acceder a esta sección.
       </div>
     )
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-3xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-900">Configuración</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Administrá los datos y opciones del cotizador</p>
+    <div className="max-w-[860px] mx-auto px-6 py-7">
+      <div className="mb-7">
+        <h1 className="text-[22px] font-bold text-slate-900 tracking-tight">Configuración</h1>
+        <p className="text-[13px] text-slate-400 mt-0.5">Administrá los datos y opciones del cotizador</p>
       </div>
 
       {/* Mi perfil */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Mi perfil</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-4">
+        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-5">Mi perfil</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <div>
             <label className={lc}>Nombre</label>
-            <input value={user?.nombre || ''} disabled className={ic + ' bg-gray-50 text-gray-500 cursor-not-allowed'} />
+            <input value={user?.nombre || ''} disabled className={ic + ' bg-slate-50 text-slate-400 cursor-not-allowed'} />
           </div>
           <div>
             <label className={lc}>Email</label>
-            <input value={user?.email || ''} disabled className={ic + ' bg-gray-50 text-gray-500 cursor-not-allowed'} />
+            <input value={user?.email || ''} disabled className={ic + ' bg-slate-50 text-slate-400 cursor-not-allowed'} />
           </div>
         </div>
 
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Cambiar contraseña</p>
+        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">Cambiar contraseña</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
           <div>
             <label className={lc}>Contraseña actual</label>
-            <input
-              type="password"
-              value={passForm.actual}
+            <input type="password" value={passForm.actual}
               onChange={e => setPassForm(p => ({ ...p, actual: e.target.value }))}
-              className={ic}
-              placeholder="••••••••"
-            />
+              className={ic} placeholder="••••••••" />
           </div>
           <div>
             <label className={lc}>Nueva contraseña</label>
-            <input
-              type="password"
-              value={passForm.nuevo}
+            <input type="password" value={passForm.nuevo}
               onChange={e => setPassForm(p => ({ ...p, nuevo: e.target.value }))}
-              className={ic}
-              placeholder="••••••••"
-            />
+              className={ic} placeholder="••••••••" />
           </div>
           <div>
             <label className={lc}>Confirmar contraseña</label>
-            <input
-              type="password"
-              value={passForm.confirmar}
+            <input type="password" value={passForm.confirmar}
               onChange={e => setPassForm(p => ({ ...p, confirmar: e.target.value }))}
-              className={ic}
-              placeholder="••••••••"
-            />
+              className={ic} placeholder="••••••••" />
           </div>
         </div>
-        {passError && <p className="text-sm text-red-500 mb-3">{passError}</p>}
+        {passError && <p className="text-[13px] text-red-500 mb-3">{passError}</p>}
         <div className="flex items-center gap-3">
-          <button
-            onClick={handleChangePass}
+          <button onClick={handleChangePass}
             disabled={!passForm.actual || !passForm.nuevo || !passForm.confirmar || changePassMut.isPending}
-            className="h-9 px-4 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-40"
-          >
+            className="h-9 px-4 bg-sky-500 hover:bg-sky-600 text-white rounded-[10px] text-[13px] font-semibold transition-colors disabled:opacity-40 shadow-[0_4px_12px_-4px_rgba(14,165,233,0.45)]">
             {changePassMut.isPending ? 'Guardando...' : 'Cambiar contraseña'}
           </button>
           {passOk && (
-            <span className="flex items-center gap-1.5 text-sm text-emerald-600">
-              <CheckCircle2 size={15} />
+            <span className="flex items-center gap-1.5 text-[13px] text-emerald-600 font-medium">
+              <CheckCircle2 size={14} />
               Contraseña actualizada
             </span>
           )}
@@ -323,87 +309,74 @@ export default function Configuracion() {
       </div>
 
       {/* Datos del negocio */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Datos del negocio</p>
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-4">
+        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-5">Datos del negocio</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div>
             <label className={lc}>Nombre de la empresa</label>
-            <input
-              value={empresaForm.nombre}
+            <input value={empresaForm.nombre}
               onChange={e => setEmpresaForm(p => ({ ...p, nombre: e.target.value }))}
-              className={ic}
-            />
+              className={ic} />
           </div>
           <div>
             <label className={lc}>Email de contacto</label>
-            <input
-              type="email"
-              value={empresaForm.email}
+            <input type="email" value={empresaForm.email}
               onChange={e => setEmpresaForm(p => ({ ...p, email: e.target.value }))}
-              className={ic}
-            />
+              className={ic} />
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => updateEmpresaMut.mutate(empresaForm)}
+          <button onClick={() => updateEmpresaMut.mutate(empresaForm)}
             disabled={!empresaForm.nombre || updateEmpresaMut.isPending}
-            className="h-9 px-4 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-40"
-          >
+            className="h-9 px-4 bg-sky-500 hover:bg-sky-600 text-white rounded-[10px] text-[13px] font-semibold transition-colors disabled:opacity-40 shadow-[0_4px_12px_-4px_rgba(14,165,233,0.45)]">
             {updateEmpresaMut.isPending ? 'Guardando...' : 'Guardar cambios'}
           </button>
           {savedOk && (
-            <span className="flex items-center gap-1.5 text-sm text-emerald-600">
-              <CheckCircle2 size={15} />
-              Datos actualizados correctamente
+            <span className="flex items-center gap-1.5 text-[13px] text-emerald-600 font-medium">
+              <CheckCircle2 size={14} />
+              Datos actualizados
             </span>
           )}
         </div>
       </div>
 
       {/* Precios base */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-5">Precios base</p>
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-4">
+        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-5">Precios base</p>
 
         {/* Precio base */}
         <div className="mb-6">
-          <p className="text-sm font-medium text-gray-700 mb-3">Precio base por cotización</p>
+          <p className="text-[13px] font-semibold text-slate-700 mb-3">Precio base por cotización</p>
           <div className="flex items-end gap-3 flex-wrap">
             <div>
               <label className={lc}>Monto base ($)</label>
-              <input
-                type="number" min="0" step="0.01"
+              <input type="number" min="0" step="0.01"
                 value={precioBaseInput}
                 onChange={e => setPrecioBaseInput(e.target.value)}
-                className={ic + ' w-40'}
-              />
+                className={ic + ' w-40'} />
             </div>
-            <button
-              onClick={() => updateConfigMut.mutate({ precioBase: Number(precioBaseInput) })}
+            <button onClick={() => updateConfigMut.mutate({ precioBase: Number(precioBaseInput) })}
               disabled={updateConfigMut.isPending}
-              className="h-10 px-4 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-40"
-            >
+              className="h-10 px-4 bg-sky-500 hover:bg-sky-600 text-white rounded-[10px] text-[13px] font-semibold transition-colors disabled:opacity-40 shadow-[0_4px_12px_-4px_rgba(14,165,233,0.45)]">
               {updateConfigMut.isPending ? 'Guardando...' : 'Guardar'}
             </button>
             {configSavedOk && (
-              <span className="flex items-center gap-1.5 text-sm text-emerald-600">
-                <CheckCircle2 size={15} />
+              <span className="flex items-center gap-1.5 text-[13px] text-emerald-600 font-medium">
+                <CheckCircle2 size={14} />
                 Guardado
               </span>
             )}
           </div>
-          <p className="text-xs text-gray-400 mt-1.5">Costo fijo que se suma a todas las cotizaciones antes del material y opciones.</p>
+          <p className="text-[11px] text-slate-400 mt-1.5">Costo fijo que se suma a todas las cotizaciones antes del material y opciones.</p>
         </div>
 
         {/* Materiales */}
-        <div className="border-t border-gray-100 pt-5 mb-6">
+        <div className="border-t border-slate-100 pt-5 mb-6">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-gray-700">Materiales</p>
-            <button
-              onClick={() => setShowCreateMat(s => !s)}
-              className="flex items-center gap-1.5 h-8 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-xs font-medium transition-colors"
-            >
-              <Plus size={13} />
+            <p className="text-[13px] font-semibold text-slate-700">Materiales</p>
+            <button onClick={() => setShowCreateMat(s => !s)}
+              className="flex items-center gap-1.5 h-8 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-[8px] text-[12px] font-semibold transition-colors">
+              <Plus size={12} />
               Agregar
             </button>
           </div>
@@ -413,32 +386,26 @@ export default function Configuracion() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                 <div>
                   <label className={lc}>Nombre *</label>
-                  <input
-                    value={createMatForm.nombre}
+                  <input value={createMatForm.nombre}
                     onChange={e => setCreateMatForm(p => ({ ...p, nombre: e.target.value }))}
-                    placeholder="Cartón corrugado"
-                    className={ic}
-                  />
+                    placeholder="Cartón corrugado" className={ic} />
                 </div>
                 <div>
                   <label className={lc}>Precio por unidad ($)</label>
-                  <input
-                    type="number" min="0" step="0.01"
+                  <input type="number" min="0" step="0.01"
                     value={createMatForm.precioUnitario}
                     onChange={e => setCreateMatForm(p => ({ ...p, precioUnitario: e.target.value }))}
-                    className={ic}
-                  />
+                    className={ic} />
                 </div>
               </div>
               <div className="flex gap-2">
-                <button
-                  onClick={() => createMatMut.mutate({ nombre: createMatForm.nombre, precioUnitario: Number(createMatForm.precioUnitario) })}
+                <button onClick={() => createMatMut.mutate({ nombre: createMatForm.nombre, precioUnitario: Number(createMatForm.precioUnitario) })}
                   disabled={!createMatForm.nombre || createMatMut.isPending}
-                  className="h-8 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-40"
-                >
+                  className="h-8 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-[8px] text-[12px] font-semibold transition-colors disabled:opacity-40">
                   {createMatMut.isPending ? 'Creando...' : 'Crear material'}
                 </button>
-                <button onClick={() => setShowCreateMat(false)} className="h-8 px-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-lg text-xs font-medium transition-colors">
+                <button onClick={() => setShowCreateMat(false)}
+                  className="h-8 px-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-[8px] text-[12px] font-semibold transition-colors">
                   Cancelar
                 </button>
               </div>
@@ -446,11 +413,11 @@ export default function Configuracion() {
           )}
 
           {materiales.length === 0 && !showCreateMat ? (
-            <p className="text-sm text-gray-400 py-1">No hay materiales configurados</p>
+            <p className="text-[13px] text-slate-400 py-1">No hay materiales configurados</p>
           ) : (
             <div className="space-y-2">
               {materiales.map(mat => (
-                <div key={mat.id} className={`border rounded-xl transition-colors ${editMatId === mat.id ? 'border-sky-200 bg-sky-50/20' : 'border-gray-100'}`}>
+                <div key={mat.id} className={`border rounded-xl transition-colors ${editMatId === mat.id ? 'border-sky-200 bg-sky-50/20' : 'border-slate-100'}`}>
                   {editMatId === mat.id ? (
                     <div className="p-3">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
@@ -464,16 +431,15 @@ export default function Configuracion() {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <button
-                          onClick={() => updateMatMut.mutate({ id: mat.id, data: { nombre: editMatForm.nombre, precioUnitario: Number(editMatForm.precioUnitario) } })}
+                        <button onClick={() => updateMatMut.mutate({ id: mat.id, data: { nombre: editMatForm.nombre, precioUnitario: Number(editMatForm.precioUnitario) } })}
                           disabled={updateMatMut.isPending}
-                          className="flex items-center gap-1.5 h-8 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-40"
-                        >
-                          <Check size={13} />
+                          className="flex items-center gap-1.5 h-8 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-[8px] text-[12px] font-semibold transition-colors disabled:opacity-40">
+                          <Check size={12} />
                           Guardar
                         </button>
-                        <button onClick={() => setEditMatId(null)} className="flex items-center gap-1.5 h-8 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-medium transition-colors">
-                          <X size={13} />
+                        <button onClick={() => setEditMatId(null)}
+                          className="flex items-center gap-1.5 h-8 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-[8px] text-[12px] font-semibold transition-colors">
+                          <X size={12} />
                           Cancelar
                         </button>
                       </div>
@@ -481,15 +447,17 @@ export default function Configuracion() {
                   ) : (
                     <div className="flex items-center justify-between gap-3 px-4 py-3">
                       <div>
-                        <p className="text-sm font-medium text-gray-900">{mat.nombre}</p>
-                        <p className="text-xs text-gray-400">${mat.precioUnitario.toLocaleString('es-AR')} / unidad</p>
+                        <p className="text-[13px] font-semibold text-slate-900">{mat.nombre}</p>
+                        <p className="text-[11px] text-slate-400 font-mono">${mat.precioUnitario.toLocaleString('es-AR')} / unidad</p>
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
-                        <button onClick={() => { setEditMatId(mat.id); setEditMatForm({ nombre: mat.nombre, precioUnitario: String(mat.precioUnitario) }) }} className="p-1.5 text-gray-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors">
-                          <Edit2 size={14} />
+                        <button onClick={() => { setEditMatId(mat.id); setEditMatForm({ nombre: mat.nombre, precioUnitario: String(mat.precioUnitario) }) }}
+                          className="p-1.5 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors">
+                          <Edit2 size={13} />
                         </button>
-                        <button onClick={() => deleteMatMut.mutate(mat.id)} disabled={deleteMatMut.isPending} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                          <Trash2 size={14} />
+                        <button onClick={() => deleteMatMut.mutate(mat.id)} disabled={deleteMatMut.isPending}
+                          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                          <Trash2 size={13} />
                         </button>
                       </div>
                     </div>
@@ -501,14 +469,12 @@ export default function Configuracion() {
         </div>
 
         {/* Tramos de descuento */}
-        <div className="border-t border-gray-100 pt-5">
+        <div className="border-t border-slate-100 pt-5">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-gray-700">Descuentos por volumen</p>
-            <button
-              onClick={() => setShowCreateTramo(s => !s)}
-              className="flex items-center gap-1.5 h-8 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-xs font-medium transition-colors"
-            >
-              <Plus size={13} />
+            <p className="text-[13px] font-semibold text-slate-700">Descuentos por volumen</p>
+            <button onClick={() => setShowCreateTramo(s => !s)}
+              className="flex items-center gap-1.5 h-8 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-[8px] text-[12px] font-semibold transition-colors">
+              <Plus size={12} />
               Agregar tramo
             </button>
           </div>
@@ -518,34 +484,27 @@ export default function Configuracion() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                 <div>
                   <label className={lc}>Desde (unidades) *</label>
-                  <input
-                    type="number" min="1"
+                  <input type="number" min="1"
                     value={createTramoForm.desdeUnidades}
                     onChange={e => setCreateTramoForm(p => ({ ...p, desdeUnidades: e.target.value }))}
-                    placeholder="1000"
-                    className={ic}
-                  />
+                    placeholder="1000" className={ic} />
                 </div>
                 <div>
                   <label className={lc}>Descuento (%)</label>
-                  <input
-                    type="number" min="0" max="100" step="0.1"
+                  <input type="number" min="0" max="100" step="0.1"
                     value={createTramoForm.porcentaje}
                     onChange={e => setCreateTramoForm(p => ({ ...p, porcentaje: e.target.value }))}
-                    placeholder="10"
-                    className={ic}
-                  />
+                    placeholder="10" className={ic} />
                 </div>
               </div>
               <div className="flex gap-2">
-                <button
-                  onClick={() => createTramoMut.mutate({ desdeUnidades: Number(createTramoForm.desdeUnidades), porcentaje: Number(createTramoForm.porcentaje) })}
+                <button onClick={() => createTramoMut.mutate({ desdeUnidades: Number(createTramoForm.desdeUnidades), porcentaje: Number(createTramoForm.porcentaje) })}
                   disabled={!createTramoForm.desdeUnidades || !createTramoForm.porcentaje || createTramoMut.isPending}
-                  className="h-8 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-40"
-                >
+                  className="h-8 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-[8px] text-[12px] font-semibold transition-colors disabled:opacity-40">
                   {createTramoMut.isPending ? 'Creando...' : 'Crear tramo'}
                 </button>
-                <button onClick={() => setShowCreateTramo(false)} className="h-8 px-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-lg text-xs font-medium transition-colors">
+                <button onClick={() => setShowCreateTramo(false)}
+                  className="h-8 px-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-[8px] text-[12px] font-semibold transition-colors">
                   Cancelar
                 </button>
               </div>
@@ -553,11 +512,11 @@ export default function Configuracion() {
           )}
 
           {tramos.length === 0 && !showCreateTramo ? (
-            <p className="text-sm text-gray-400 py-1">No hay tramos configurados</p>
+            <p className="text-[13px] text-slate-400 py-1">No hay tramos configurados</p>
           ) : (
             <div className="space-y-2">
               {tramos.map(tramo => (
-                <div key={tramo.id} className={`border rounded-xl transition-colors ${editTramoId === tramo.id ? 'border-sky-200 bg-sky-50/20' : 'border-gray-100'}`}>
+                <div key={tramo.id} className={`border rounded-xl transition-colors ${editTramoId === tramo.id ? 'border-sky-200 bg-sky-50/20' : 'border-slate-100'}`}>
                   {editTramoId === tramo.id ? (
                     <div className="p-3">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
@@ -571,33 +530,34 @@ export default function Configuracion() {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <button
-                          onClick={() => updateTramoMut.mutate({ id: tramo.id, data: { desdeUnidades: Number(editTramoForm.desdeUnidades), porcentaje: Number(editTramoForm.porcentaje) } })}
+                        <button onClick={() => updateTramoMut.mutate({ id: tramo.id, data: { desdeUnidades: Number(editTramoForm.desdeUnidades), porcentaje: Number(editTramoForm.porcentaje) } })}
                           disabled={updateTramoMut.isPending}
-                          className="flex items-center gap-1.5 h-8 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-40"
-                        >
-                          <Check size={13} />
+                          className="flex items-center gap-1.5 h-8 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-[8px] text-[12px] font-semibold transition-colors disabled:opacity-40">
+                          <Check size={12} />
                           Guardar
                         </button>
-                        <button onClick={() => setEditTramoId(null)} className="flex items-center gap-1.5 h-8 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-medium transition-colors">
-                          <X size={13} />
+                        <button onClick={() => setEditTramoId(null)}
+                          className="flex items-center gap-1.5 h-8 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-[8px] text-[12px] font-semibold transition-colors">
+                          <X size={12} />
                           Cancelar
                         </button>
                       </div>
                     </div>
                   ) : (
                     <div className="flex items-center justify-between gap-3 px-4 py-3">
-                      <p className="text-sm text-gray-700">
-                        A partir de <span className="font-semibold">{tramo.desdeUnidades.toLocaleString('es-AR')} u.</span>
+                      <p className="text-[13px] text-slate-700">
+                        A partir de <span className="font-semibold font-mono">{tramo.desdeUnidades.toLocaleString('es-AR')} u.</span>
                         {' → '}
                         <span className="font-semibold text-emerald-600">{tramo.porcentaje}% de descuento</span>
                       </p>
                       <div className="flex items-center gap-1 flex-shrink-0">
-                        <button onClick={() => { setEditTramoId(tramo.id); setEditTramoForm({ desdeUnidades: String(tramo.desdeUnidades), porcentaje: String(tramo.porcentaje) }) }} className="p-1.5 text-gray-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors">
-                          <Edit2 size={14} />
+                        <button onClick={() => { setEditTramoId(tramo.id); setEditTramoForm({ desdeUnidades: String(tramo.desdeUnidades), porcentaje: String(tramo.porcentaje) }) }}
+                          className="p-1.5 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors">
+                          <Edit2 size={13} />
                         </button>
-                        <button onClick={() => deleteTramoMut.mutate(tramo.id)} disabled={deleteTramoMut.isPending} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                          <Trash2 size={14} />
+                        <button onClick={() => deleteTramoMut.mutate(tramo.id)} disabled={deleteTramoMut.isPending}
+                          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                          <Trash2 size={13} />
                         </button>
                       </div>
                     </div>
@@ -610,93 +570,73 @@ export default function Configuracion() {
       </div>
 
       {/* Campos del cotizador */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <div className="bg-white rounded-2xl border border-slate-200 p-5">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Campos del cotizador</p>
-          <button
-            onClick={() => setShowNuevo(s => !s)}
-            className="flex items-center gap-1.5 h-8 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-xs font-medium transition-colors"
-          >
-            <Plus size={13} />
+          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">Campos del cotizador</p>
+          <button onClick={() => setShowNuevo(s => !s)}
+            className="flex items-center gap-1.5 h-8 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-[8px] text-[12px] font-semibold transition-colors">
+            <Plus size={12} />
             Nuevo campo
           </button>
         </div>
-        <p className="text-xs text-gray-400 mb-4">
+        <p className="text-[12px] text-slate-400 mb-4">
           Los campos aparecen en el formulario de cotización y afectan el precio según su configuración.
         </p>
 
         {showNuevo && (
           <div className="border border-sky-200 bg-sky-50/40 rounded-xl p-4 mb-4">
-            <p className="text-sm font-semibold text-gray-800 mb-4">Nuevo campo personalizado</p>
+            <p className="text-[13px] font-semibold text-slate-800 mb-4">Nuevo campo personalizado</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={lc}>Nombre del campo</label>
-                <input
-                  value={nuevo.nombre}
+                <input value={nuevo.nombre}
                   onChange={e => setNuevo(p => ({ ...p, nombre: e.target.value }))}
                   placeholder="ej. Barniz UV, Troquelado..."
-                  className={ic}
-                />
+                  className={ic} />
               </div>
               <div>
                 <label className={lc}>Tipo de entrada</label>
-                <select
-                  value={nuevo.tipo}
+                <select value={nuevo.tipo}
                   onChange={e => setNuevo(p => ({ ...p, tipo: e.target.value as any }))}
-                  className={ic}
-                >
+                  className={ic}>
                   {TIPOS_CAMPO.map(t => <option key={t} value={t}>{tipoLabel[t]}</option>)}
                 </select>
-                <p className="text-xs text-gray-400 mt-1">{tipoDesc[nuevo.tipo]}</p>
+                <p className="text-[11px] text-slate-400 mt-1">{tipoDesc[nuevo.tipo]}</p>
               </div>
               {nuevo.tipo === 'SELECT' && (
                 <div className="sm:col-span-2">
                   <label className={lc}>Opciones (separadas por coma)</label>
-                  <input
-                    value={nuevoOpciones}
+                  <input value={nuevoOpciones}
                     onChange={e => setNuevoOpciones(e.target.value)}
                     placeholder="Opción A, Opción B, Opción C"
-                    className={ic}
-                  />
+                    className={ic} />
                 </div>
               )}
               <div>
                 <label className={lc}>Tipo de impacto en precio</label>
-                <select
-                  value={nuevo.impactoTipo}
+                <select value={nuevo.impactoTipo}
                   onChange={e => setNuevo(p => ({ ...p, impactoTipo: e.target.value as any }))}
-                  className={ic}
-                >
+                  className={ic}>
                   {IMPACTO_TIPOS.map(t => <option key={t} value={t}>{impactoLabel[t]}</option>)}
                 </select>
-                <p className="text-xs text-gray-400 mt-1">{impactoDesc[nuevo.impactoTipo]}</p>
+                <p className="text-[11px] text-slate-400 mt-1">{impactoDesc[nuevo.impactoTipo]}</p>
               </div>
               <div>
                 <label className={lc}>
                   Valor del impacto ({nuevo.impactoTipo === 'PORCENTAJE' ? '%' : '$'})
                 </label>
-                <input
-                  type="number"
-                  value={nuevo.impactoValor}
-                  min="0"
-                  step="0.01"
+                <input type="number" value={nuevo.impactoValor} min="0" step="0.01"
                   onChange={e => setNuevo(p => ({ ...p, impactoValor: Number(e.target.value) }))}
-                  className={ic}
-                />
+                  className={ic} />
               </div>
             </div>
             <div className="flex items-center gap-2 mt-4 pt-3 border-t border-sky-200">
-              <button
-                onClick={createCampo}
-                disabled={!nuevo.nombre || createMut.isPending}
-                className="h-9 px-4 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-40"
-              >
+              <button onClick={createCampo} disabled={!nuevo.nombre || createMut.isPending}
+                className="h-9 px-4 bg-sky-500 hover:bg-sky-600 text-white rounded-[10px] text-[13px] font-semibold transition-colors disabled:opacity-40 shadow-[0_4px_12px_-4px_rgba(14,165,233,0.45)]">
                 {createMut.isPending ? 'Creando...' : 'Crear campo'}
               </button>
-              <button
-                onClick={() => { setShowNuevo(false); setNuevo(initNuevo); setNuevoOpciones('') }}
-                className="h-9 px-4 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
-              >
+              <button onClick={() => { setShowNuevo(false); setNuevo(initNuevo); setNuevoOpciones('') }}
+                className="h-9 px-4 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-[10px] text-[13px] font-semibold transition-colors">
                 Cancelar
               </button>
             </div>
@@ -704,44 +644,37 @@ export default function Configuracion() {
         )}
 
         {isLoading ? (
-          <p className="text-sm text-gray-400">Cargando campos...</p>
+          <p className="text-[13px] text-slate-400">Cargando campos...</p>
         ) : campos.length === 0 && !showNuevo ? (
-          <div className="text-center py-8 border border-dashed border-gray-200 rounded-xl">
-            <p className="text-sm text-gray-400 mb-2">No hay campos configurados</p>
-            <p className="text-xs text-gray-300">Creá tu primer campo para personalizar las cotizaciones</p>
+          <div className="text-center py-8 border border-dashed border-slate-200 rounded-xl">
+            <p className="text-[13px] text-slate-400 mb-1">No hay campos configurados</p>
+            <p className="text-[12px] text-slate-300">Creá tu primer campo para personalizar las cotizaciones</p>
           </div>
         ) : (
           <div className="space-y-2">
             {campos.map(campo => (
-              <div
-                key={campo.id}
+              <div key={campo.id}
                 className={`border rounded-xl transition-colors ${
-                  editingId === campo.id ? 'border-sky-200 bg-sky-50/20' : 'border-gray-100'
-                }`}
-              >
+                  editingId === campo.id ? 'border-sky-200 bg-sky-50/20' : 'border-slate-100'
+                }`}>
                 {confirmDelete === campo.id ? (
                   <div className="p-4">
                     <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0 w-9 h-9 bg-red-100 rounded-lg flex items-center justify-center">
-                        <AlertTriangle size={16} className="text-red-500" />
+                      <div className="flex-shrink-0 w-9 h-9 bg-red-50 rounded-xl flex items-center justify-center">
+                        <AlertTriangle size={15} className="text-red-500" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-semibold text-gray-900 mb-0.5">¿Eliminar "{campo.nombre}"?</p>
-                        <p className="text-xs text-gray-500 mb-3">
-                          Esto eliminará el campo del cotizador. Los valores guardados en cotizaciones existentes se mantendrán, pero no podrás ver ni editar este campo en nuevas cotizaciones.
+                        <p className="text-[13px] font-semibold text-slate-900 mb-0.5">¿Eliminar "{campo.nombre}"?</p>
+                        <p className="text-[12px] text-slate-500 mb-3">
+                          Esto eliminará el campo del cotizador. Los valores guardados en cotizaciones existentes se mantendrán.
                         </p>
                         <div className="flex gap-2">
-                          <button
-                            onClick={() => deleteMut.mutate(campo.id)}
-                            disabled={deleteMut.isPending}
-                            className="h-8 px-4 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-40"
-                          >
+                          <button onClick={() => deleteMut.mutate(campo.id)} disabled={deleteMut.isPending}
+                            className="h-8 px-4 bg-red-500 hover:bg-red-600 text-white rounded-[8px] text-[12px] font-semibold transition-colors disabled:opacity-40">
                             {deleteMut.isPending ? 'Eliminando...' : 'Sí, eliminar'}
                           </button>
-                          <button
-                            onClick={() => setConfirmDelete(null)}
-                            className="h-8 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
-                          >
+                          <button onClick={() => setConfirmDelete(null)}
+                            className="h-8 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-[8px] text-[12px] font-semibold transition-colors">
                             Cancelar
                           </button>
                         </div>
@@ -753,71 +686,52 @@ export default function Configuracion() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                       <div>
                         <label className={lc}>Nombre</label>
-                        <input
-                          value={editForm.nombre || ''}
+                        <input value={editForm.nombre || ''}
                           onChange={e => setEditForm(p => ({ ...p, nombre: e.target.value }))}
-                          className={ic}
-                        />
+                          className={ic} />
                       </div>
                       <div>
                         <label className={lc}>Tipo de entrada</label>
-                        <select
-                          value={editForm.tipo || ''}
+                        <select value={editForm.tipo || ''}
                           onChange={e => setEditForm(p => ({ ...p, tipo: e.target.value as any }))}
-                          className={ic}
-                        >
+                          className={ic}>
                           {TIPOS_CAMPO.map(t => <option key={t} value={t}>{tipoLabel[t]}</option>)}
                         </select>
                       </div>
                       {editForm.tipo === 'SELECT' && (
                         <div className="sm:col-span-2">
                           <label className={lc}>Opciones (separadas por coma)</label>
-                          <input
-                            value={editOpciones}
-                            onChange={e => setEditOpciones(e.target.value)}
-                            className={ic}
-                          />
+                          <input value={editOpciones} onChange={e => setEditOpciones(e.target.value)} className={ic} />
                         </div>
                       )}
                       <div>
                         <label className={lc}>Tipo de impacto</label>
-                        <select
-                          value={editForm.impactoTipo || ''}
+                        <select value={editForm.impactoTipo || ''}
                           onChange={e => setEditForm(p => ({ ...p, impactoTipo: e.target.value as any }))}
-                          className={ic}
-                        >
+                          className={ic}>
                           {IMPACTO_TIPOS.map(t => <option key={t} value={t}>{impactoLabel[t]}</option>)}
                         </select>
-                        <p className="text-xs text-gray-400 mt-1">{editForm.impactoTipo ? impactoDesc[editForm.impactoTipo] : ''}</p>
+                        <p className="text-[11px] text-slate-400 mt-1">{editForm.impactoTipo ? impactoDesc[editForm.impactoTipo] : ''}</p>
                       </div>
                       <div>
                         <label className={lc}>
                           Valor ({editForm.impactoTipo === 'PORCENTAJE' ? '%' : '$'})
                         </label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
+                        <input type="number" min="0" step="0.01"
                           value={editForm.impactoValor ?? ''}
                           onChange={e => setEditForm(p => ({ ...p, impactoValor: Number(e.target.value) }))}
-                          className={ic}
-                        />
+                          className={ic} />
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <button
-                        onClick={() => saveEdit(campo.id)}
-                        disabled={updateMut.isPending}
-                        className="flex items-center gap-1.5 h-8 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-40"
-                      >
-                        <Check size={13} />
+                      <button onClick={() => saveEdit(campo.id)} disabled={updateMut.isPending}
+                        className="flex items-center gap-1.5 h-8 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-[8px] text-[12px] font-semibold transition-colors disabled:opacity-40">
+                        <Check size={12} />
                         Guardar cambios
                       </button>
-                      <button
-                        onClick={() => setEditingId(null)}
-                        className="flex items-center gap-1.5 h-8 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-medium transition-colors"
-                      >
-                        <X size={13} />
+                      <button onClick={() => setEditingId(null)}
+                        className="flex items-center gap-1.5 h-8 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-[8px] text-[12px] font-semibold transition-colors">
+                        <X size={12} />
                         Cancelar
                       </button>
                     </div>
@@ -826,16 +740,16 @@ export default function Configuracion() {
                   <div className="flex items-start justify-between gap-3 p-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <p className="text-sm font-semibold text-gray-900">{campo.nombre}</p>
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">
+                        <p className="text-[13px] font-semibold text-slate-900">{campo.nombre}</p>
+                        <span className="inline-flex items-center text-[10px] font-semibold px-2 py-[2px] rounded-full bg-slate-100 text-slate-600">
                           {tipoLabel[campo.tipo]}
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <Info size={11} className="text-gray-300 flex-shrink-0" />
-                        <p className="text-xs text-gray-400">
+                        <Info size={11} className="text-slate-300 flex-shrink-0" />
+                        <p className="text-[12px] text-slate-400">
                           {impactoLabel[campo.impactoTipo]}{': '}
-                          <span className="font-medium text-gray-600">
+                          <span className="font-semibold text-slate-600 font-mono">
                             {campo.impactoTipo === 'PORCENTAJE' ? `${campo.impactoValor}%` : `$${campo.impactoValor}`}
                           </span>
                           {campo.tipo === 'SELECT' && campo.opciones.length > 0 &&
@@ -844,19 +758,13 @@ export default function Configuracion() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
-                      <button
-                        onClick={() => startEdit(campo)}
-                        className="p-1.5 text-gray-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors"
-                        title="Editar"
-                      >
-                        <Edit2 size={14} />
+                      <button onClick={() => startEdit(campo)}
+                        className="p-1.5 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors">
+                        <Edit2 size={13} />
                       </button>
-                      <button
-                        onClick={() => setConfirmDelete(campo.id)}
-                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Eliminar"
-                      >
-                        <Trash2 size={14} />
+                      <button onClick={() => setConfirmDelete(campo.id)}
+                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                        <Trash2 size={13} />
                       </button>
                     </div>
                   </div>
