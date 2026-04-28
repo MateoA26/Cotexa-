@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { pedidosApi, camposApi, archivosApi, empresaApi } from '../services/api'
+import { pedidosApi, camposApi, archivosApi, empresaApi, preciosApi } from '../services/api'
 import { Pedido, CampoCustom, ArchivoAdjunto } from '../types'
 import { ESTADO_LABELS, ESTADO_COLORS, ESTADOS_ORDEN } from '../utils/estados'
 import { ArrowLeft, Edit2, Download, Calculator, FileText, Clock, CheckCircle2, Package, Truck, XCircle, Upload, Trash2, Image as ImageIcon, File as FileIcon, MessageSquare } from 'lucide-react'
@@ -17,18 +17,10 @@ const getFileIcon = (tipo: string) => {
   return FileIcon
 }
 
-const PRECIO_BASE = 150
-const MATERIALES = ['Cartón corrugado', 'Cartón microcorrugado', 'Kraft', 'Cartulina', 'Otro']
 const IMPRESIONES = [
-  { value: 'sin_impresion', label: 'Sin impresión', recargo: 0 },
-  { value: 'un_color', label: 'Un color', recargo: 0.15 },
-  { value: 'full_color', label: 'Full color', recargo: 0.35 },
-]
-const DESCUENTOS = [
-  { desde: 5000, desc: 0.20 },
-  { desde: 1000, desc: 0.15 },
-  { desde: 500, desc: 0.10 },
-  { desde: 250, desc: 0.05 },
+  { value: 'sin_impresion', label: 'Sin impresión' },
+  { value: 'un_color', label: 'Un color' },
+  { value: 'full_color', label: 'Full color' },
 ]
 
 const ESTADO_ICONS: Record<string, any> = {
@@ -37,23 +29,25 @@ const ESTADO_ICONS: Record<string, any> = {
   ENTREGADO: Truck, CANCELADO: XCircle,
 }
 
-type BreakdownItem = { label: string; delta: number }
+interface BreakdownItem { label: string; delta: number }
+interface TramoDescuento { id: number; desdeUnidades: number; porcentaje: number }
+interface Material { id: number; nombre: string; precioUnitario: number; activo: boolean }
 
 function calcularPrecio(
   campos: CampoCustom[],
-  impresion: string,
   cantidad: number,
-  valoresCampos: Record<number, string>
-): { unitario: number; total: number; descuento: number; breakdown: BreakdownItem[] } {
-  const breakdown: BreakdownItem[] = [{ label: 'Precio base', delta: PRECIO_BASE }]
-  let precio = PRECIO_BASE
+  valoresCampos: Record<number, string>,
+  precioBase: number,
+  materialPrecioUnitario: number,
+  tramos: TramoDescuento[]
+): { unitario: number; total: number; descuentoPct: number; breakdown: BreakdownItem[] } {
+  const breakdown: BreakdownItem[] = []
+  breakdown.push({ label: 'Precio base', delta: precioBase })
+  let precio = precioBase
 
-  const recImp = IMPRESIONES.find(i => i.value === impresion)?.recargo || 0
-  if (recImp > 0) {
-    const label = IMPRESIONES.find(i => i.value === impresion)!.label
-    const delta = Math.round(precio * recImp)
-    precio = precio * (1 + recImp)
-    breakdown.push({ label: `${label} (+${recImp * 100}%)`, delta })
+  if (materialPrecioUnitario > 0) {
+    breakdown.push({ label: 'Material', delta: materialPrecioUnitario })
+    precio += materialPrecioUnitario
   }
 
   campos.forEach(c => {
@@ -65,8 +59,7 @@ function calcularPrecio(
       precio *= (1 + c.impactoValor / 100)
       breakdown.push({ label: `${c.nombre} (+${c.impactoValor}%)`, delta })
     } else if (c.impactoTipo === 'FIJO') {
-      delta = c.impactoValor
-      precio += c.impactoValor
+      delta = c.impactoValor; precio += c.impactoValor
       breakdown.push({ label: `${c.nombre} (fijo)`, delta })
     } else if (c.impactoTipo === 'POR_UNIDAD') {
       delta = Math.round((Number(val) || 0) * c.impactoValor)
@@ -75,15 +68,15 @@ function calcularPrecio(
     }
   })
 
-  const descObj = DESCUENTOS.find(d => cantidad >= d.desde)
-  const descuento = descObj?.desc || 0
-  if (descuento > 0) {
-    const delta = -Math.round(precio * descuento)
-    breakdown.push({ label: `Descuento volumen (-${descuento * 100}%)`, delta })
-    precio = precio * (1 - descuento)
+  const tramo = [...tramos].sort((a, b) => b.desdeUnidades - a.desdeUnidades).find(t => cantidad >= t.desdeUnidades)
+  const descuentoPct = tramo?.porcentaje || 0
+  if (descuentoPct > 0) {
+    const delta = -Math.round(precio * descuentoPct / 100)
+    breakdown.push({ label: `Descuento volumen (-${descuentoPct}%)`, delta })
+    precio = precio * (1 - descuentoPct / 100)
   }
 
-  return { unitario: Math.round(precio), total: Math.round(precio * cantidad), descuento, breakdown }
+  return { unitario: Math.round(precio), total: Math.round(precio * cantidad), descuentoPct, breakdown }
 }
 
 function printQuote(pedido: Pedido, empresaLogoUrl?: string, empresaNombre?: string) {
@@ -265,16 +258,16 @@ export default function DetallePedido() {
   const [editLargo, setEditLargo] = useState('')
   const [editAncho, setEditAncho] = useState('')
   const [editAlto, setEditAlto] = useState('')
-  const [editMaterial, setEditMaterial] = useState(MATERIALES[0])
+  const [editMaterialId, setEditMaterialId] = useState('')
   const [editImpresion, setEditImpresion] = useState('sin_impresion')
   const [editCantidad, setEditCantidad] = useState('100')
   const [editEntregaEst, setEditEntregaEst] = useState('')
   const [editNotasCliente, setEditNotasCliente] = useState('')
   const [editValoresCampos, setEditValoresCampos] = useState<Record<number, string>>({})
-  const [editPrecioUnitario, setEditPrecioUnitario] = useState(PRECIO_BASE)
+  const [editPrecioUnitario, setEditPrecioUnitario] = useState(0)
   const [editPrecioTotal, setEditPrecioTotal] = useState(0)
-  const [editDescuento, setEditDescuento] = useState(0)
-  const [editBreakdown, setEditBreakdown] = useState<BreakdownItem[]>([{ label: 'Precio base', delta: PRECIO_BASE }])
+  const [editDescuentoPct, setEditDescuentoPct] = useState(0)
+  const [editBreakdown, setEditBreakdown] = useState<BreakdownItem[]>([])
 
   const { data: pedido, isLoading } = useQuery<Pedido>({
     queryKey: ['pedido', id],
@@ -301,6 +294,19 @@ export default function DetallePedido() {
     queryFn: () => empresaApi.get().then(r => r.data),
   })
 
+  const { data: precioConfig } = useQuery({
+    queryKey: ['precio-config'],
+    queryFn: () => preciosApi.getConfig().then(r => r.data),
+  })
+  const { data: materiales = [] } = useQuery<Material[]>({
+    queryKey: ['materiales'],
+    queryFn: () => preciosApi.getMateriales().then(r => r.data),
+  })
+  const { data: tramos = [] } = useQuery<TramoDescuento[]>({
+    queryKey: ['tramos'],
+    queryFn: () => preciosApi.getTramos().then(r => r.data),
+  })
+
   const deleteMutation = useMutation({
     mutationFn: (archivoId: number) => archivosApi.delete(archivoId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['archivos', id] }),
@@ -314,22 +320,28 @@ export default function DetallePedido() {
     }
   })
 
+  const materialesActivos = materiales.filter(m => m.activo)
+
   useEffect(() => {
     if (!isEditing) return
     const cant = Number(editCantidad) || 0
-    const result = calcularPrecio(campos, editImpresion, cant, editValoresCampos)
-    setEditDescuento(result.descuento)
+    const base = precioConfig?.precioBase ?? 0
+    const selectedMat = materiales.find(m => String(m.id) === editMaterialId) || null
+    const matPrecio = selectedMat?.precioUnitario || 0
+    const result = calcularPrecio(campos, cant, editValoresCampos, base, matPrecio, tramos)
+    setEditDescuentoPct(result.descuentoPct)
     setEditPrecioUnitario(result.unitario)
     setEditPrecioTotal(result.total)
     setEditBreakdown(result.breakdown)
-  }, [editCantidad, editImpresion, editValoresCampos, campos, isEditing])
+  }, [editCantidad, editMaterialId, editValoresCampos, campos, isEditing, precioConfig, materiales, tramos])
 
   const startEditing = () => {
     if (!pedido) return
     setEditLargo(pedido.largo?.toString() ?? '')
     setEditAncho(pedido.ancho?.toString() ?? '')
     setEditAlto(pedido.alto?.toString() ?? '')
-    setEditMaterial(pedido.material || MATERIALES[0])
+    const mat = materiales.find(m => m.nombre === pedido.material)
+    setEditMaterialId(mat ? String(mat.id) : '')
     setEditImpresion(pedido.impresion || 'sin_impresion')
     setEditCantidad(pedido.cantidad?.toString() ?? '100')
     setEditEntregaEst(pedido.entregaEst ? pedido.entregaEst.split('T')[0] : '')
@@ -341,16 +353,18 @@ export default function DetallePedido() {
   }
 
   const saveEdit = async () => {
+    const selectedMat = materiales.find(m => String(m.id) === editMaterialId) || null
     await mutation.mutateAsync({
       largo: editLargo ? Number(editLargo) : null,
       ancho: editAncho ? Number(editAncho) : null,
       alto: editAlto ? Number(editAlto) : null,
-      material: editMaterial,
+      material: selectedMat?.nombre || null,
+      materialId: selectedMat?.id || null,
       impresion: editImpresion,
       cantidad: Number(editCantidad),
       entregaEst: editEntregaEst || null,
       notasCliente: editNotasCliente || null,
-      precioBase: PRECIO_BASE,
+      precioBase: precioConfig?.precioBase ?? 0,
       precioTotal: editPrecioTotal,
       valoresCampos: Object.entries(editValoresCampos)
         .filter(([, v]) => v !== '' && v !== 'false')
@@ -485,17 +499,20 @@ export default function DetallePedido() {
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div>
                   <label className={lc}>Material</label>
-                  <select value={editMaterial} onChange={e => setEditMaterial(e.target.value)} className={ic}>
-                    {MATERIALES.map(m => <option key={m}>{m}</option>)}
+                  <select value={editMaterialId} onChange={e => setEditMaterialId(e.target.value)} className={ic}>
+                    <option value="">— Sin material —</option>
+                    {materialesActivos.map(m => (
+                      <option key={m.id} value={m.id}>
+                        {m.nombre}{m.precioUnitario > 0 ? ` (+$${m.precioUnitario}/u)` : ''}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
                   <label className={lc}>Impresión</label>
                   <select value={editImpresion} onChange={e => setEditImpresion(e.target.value)} className={ic}>
                     {IMPRESIONES.map(i => (
-                      <option key={i.value} value={i.value}>
-                        {i.label}{i.recargo ? ` (+${i.recargo * 100}%)` : ''}
-                      </option>
+                      <option key={i.value} value={i.value}>{i.label}</option>
                     ))}
                   </select>
                 </div>
@@ -504,8 +521,8 @@ export default function DetallePedido() {
                 <div>
                   <label className={lc}>Cantidad de unidades</label>
                   <input type="number" value={editCantidad} onChange={e => setEditCantidad(e.target.value)} min="1" className={ic} />
-                  {editDescuento > 0 && (
-                    <p className="text-[11px] text-emerald-600 mt-1 font-medium">✓ Descuento: -{editDescuento * 100}%</p>
+                  {editDescuentoPct > 0 && (
+                    <p className="text-[11px] text-emerald-600 mt-1 font-medium">✓ Descuento: -{editDescuentoPct}%</p>
                   )}
                 </div>
                 <div>
