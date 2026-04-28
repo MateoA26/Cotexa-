@@ -251,7 +251,7 @@ export default function Configuracion() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-7">
+    <div className="max-w-3xl mx-auto px-7 py-7">
       <div className="mb-7">
         <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Configuración</h1>
         <p className="text-[13px] text-slate-400 mt-0.5">Administrá los datos y opciones del cotizador</p>

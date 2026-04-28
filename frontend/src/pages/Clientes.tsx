@@ -46,7 +46,7 @@ export default function Clientes() {
   const lc = 'block text-[11px] font-semibold text-slate-500 uppercase tracking-widest mb-1.5'
 
   return (
-    <div className="max-w-[1360px] mx-auto px-6 py-7">
+    <div className="max-w-[1360px] mx-auto px-7 py-7">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-7">
         <div>

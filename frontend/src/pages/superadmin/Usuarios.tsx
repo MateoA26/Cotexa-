@@ -95,7 +95,7 @@ export default function SuperAdminUsuarios() {
     : null
 
   return (
-    <div className="max-w-[1360px] mx-auto px-6 py-7">
+    <div className="max-w-[1360px] mx-auto px-7 py-7">
       <div className="flex items-center justify-between mb-7">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Usuarios</h1>

@@ -274,7 +274,7 @@ export default function DetallePedido() {
   const lc = 'block text-[11px] font-semibold text-slate-500 uppercase tracking-widest mb-1.5'
 
   return (
-    <div className="max-w-[1360px] mx-auto px-6 py-7">
+    <div className="max-w-[1360px] mx-auto px-7 py-7">
 
       {/* Header */}
       <div className="flex items-start gap-3 mb-7">

@@ -90,7 +90,7 @@ export default function EmpresaDetalle() {
   }
 
   return (
-    <div className="max-w-[1360px] mx-auto px-6 py-7">
+    <div className="max-w-[1360px] mx-auto px-7 py-7">
       {/* Header */}
       <div className="flex items-center gap-3 mb-7">
         <button onClick={() => navigate('/superadmin/empresas')}
