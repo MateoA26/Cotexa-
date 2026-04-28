@@ -124,37 +124,70 @@ function printQuote(pedido: Pedido, empresaLogoUrl?: string, empresaNombre?: str
   <title>Cotización #${pedido.numeroPedido} — ${companyName}</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#0f172a;padding:40px 48px;background:#fff}
-    .header{display:flex;justify-content:space-between;align-items:center;padding-bottom:24px;border-bottom:3px solid #0ea5e9;margin-bottom:30px}
-    .logo{height:48px;width:auto;object-fit:contain}
-    .company-name{font-size:20px;font-weight:800;color:#0f172a}
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    body{font-family:'Inter',sans-serif;font-size:13px;color:#0f172a;background:#fff;padding:0}
+
+    .page{max-width:780px;margin:0 auto;padding:48px 52px;min-height:100vh;position:relative}
+
+    /* HEADER */
+    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px}
+    .logo{height:52px;width:auto;object-fit:contain}
+    .company-name{font-size:22px;font-weight:800;color:#0f172a}
     .title-block{text-align:right}
-    .doc-title{font-size:26px;font-weight:800;color:#0ea5e9;letter-spacing:-0.5px}
-    .doc-meta{font-size:12px;color:#64748b;margin-top:4px}
-    .badge{display:inline-block;margin-top:8px;padding:3px 12px;border-radius:99px;font-size:11px;font-weight:700;background:#e0f2fe;color:#0369a1;letter-spacing:.05em}
-    .sec{margin-bottom:24px}
-    .sec-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#94a3b8;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #f1f5f9}
-    .client-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px}
-    .cn{font-size:16px;font-weight:700;color:#0f172a}
-    .cs{font-size:12px;color:#475569;margin-top:5px}
-    .cuit{font-size:11px;color:#94a3b8;font-family:monospace;margin-top:3px}
-    table{width:100%;border-collapse:collapse}
-    .lc{width:42%;padding:9px 10px;font-size:12px;color:#64748b;border-bottom:1px solid #f1f5f9}
-    .vc{padding:9px 10px;font-size:13px;font-weight:500;color:#0f172a;border-bottom:1px solid #f1f5f9}
-    .price-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px;margin-top:8px}
-    .pr{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px;border-bottom:1px solid #f1f5f9}
+    .doc-title{font-size:28px;font-weight:800;letter-spacing:-1px;color:#0ea5e9}
+    .doc-meta{font-size:12px;color:#94a3b8;margin-top:6px;font-weight:500}
+    .badge{display:inline-block;margin-top:8px;padding:4px 14px;border-radius:99px;font-size:10px;font-weight:700;background:#e0f2fe;color:#0369a1;letter-spacing:.08em;text-transform:uppercase}
+
+    /* DIVIDER */
+    .divider{height:3px;background:linear-gradient(90deg,#0ea5e9,#38bdf8,#7dd3fc);border-radius:99px;margin-bottom:32px}
+
+    /* SECTIONS */
+    .sec{margin-bottom:28px}
+    .sec-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:#cbd5e1;margin-bottom:12px}
+
+    /* CLIENT CARD */
+    .client-card{background:linear-gradient(135deg,#f8fafc 0%,#f0f9ff 100%);border:1px solid #e2e8f0;border-radius:14px;padding:20px 22px;position:relative;overflow:hidden}
+    .client-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,#0ea5e9,#38bdf8);border-radius:4px 0 0 4px}
+    .cn{font-size:17px;font-weight:800;color:#0f172a;padding-left:4px}
+    .cs{font-size:12px;color:#64748b;margin-top:4px;padding-left:4px;display:flex;align-items:center;gap:6px}
+    .cuit{font-size:11px;color:#94a3b8;font-family:monospace;margin-top:3px;padding-left:4px}
+
+    /* SPECS TABLE */
+    .spec-table{width:100%;border-collapse:collapse;border-radius:14px;overflow:hidden;border:1px solid #f1f5f9}
+    .lc{width:40%;padding:11px 16px;font-size:12px;color:#94a3b8;font-weight:500;background:#fafafa;border-bottom:1px solid #f1f5f9}
+    .vc{padding:11px 16px;font-size:13px;font-weight:600;color:#0f172a;border-bottom:1px solid #f1f5f9;background:#fff}
+    tr:last-child .lc,tr:last-child .vc{border-bottom:none}
+    tr:hover .lc,tr:hover .vc{background:#f8fafc}
+
+    /* PRICE BOX */
+    .price-box{background:#fafafa;border:1px solid #f1f5f9;border-radius:14px;overflow:hidden}
+    .pr{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;border-bottom:1px solid #f1f5f9}
     .pr:last-child{border-bottom:none}
-    .pl{color:#64748b}
-    .pv{font-weight:600;font-family:monospace;color:#0f172a}
-    .total-row{display:flex;justify-content:space-between;align-items:center;padding-top:16px;margin-top:16px;border-top:3px solid #0ea5e9}
-    .total-label{font-size:15px;font-weight:700;color:#0f172a}
-    .total-amount{font-size:30px;font-weight:800;color:#0ea5e9;font-family:monospace}
-    .notes{font-size:12px;color:#475569;font-style:italic;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:14px 16px;line-height:1.6}
-    .footer{margin-top:40px;padding-top:16px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:10px;color:#94a3b8}
-    @media print{body{padding:20px 28px}}
+    .pl{font-size:12px;color:#94a3b8;font-weight:500}
+    .pv{font-size:13px;font-weight:600;font-family:monospace;color:#0f172a}
+
+    /* TOTAL */
+    .total-section{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);border-radius:14px;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+    .total-label{font-size:14px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em}
+    .total-amount{font-size:32px;font-weight:800;color:#0ea5e9;font-family:monospace;letter-spacing:-1px}
+
+    /* NOTES */
+    .notes{font-size:12px;color:#475569;background:#f0f9ff;border:1px solid #bae6fd;border-left:4px solid #0ea5e9;border-radius:10px;padding:14px 16px;line-height:1.7}
+
+    /* FOOTER */
+    .footer{margin-top:48px;padding-top:16px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;font-size:10px;color:#cbd5e1;font-weight:500}
+
+    @media print{
+      body{padding:0}
+      .page{padding:28px 32px}
+      .total-section{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      .client-card{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      .divider{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    }
   </style>
 </head>
 <body>
+<div class="page">
   <div class="header">
     <div>
       <img src="${logoSrc}" class="logo" alt="${companyName}" onerror="this.style.display='none';document.getElementById('cname').style.display='block'"/>
@@ -166,6 +199,8 @@ function printQuote(pedido: Pedido, empresaLogoUrl?: string, empresaNombre?: str
       <span class="badge">${ESTADO_LABELS[pedido.estado] || pedido.estado}</span>
     </div>
   </div>
+
+  <div class="divider"></div>
 
   <div class="sec">
     <div class="sec-title">Cliente</div>
@@ -180,10 +215,10 @@ function printQuote(pedido: Pedido, empresaLogoUrl?: string, empresaNombre?: str
 
   <div class="sec">
     <div class="sec-title">Especificaciones del pedido</div>
-    <table><tbody>${specHtml}</tbody></table>
+    <table class="spec-table"><tbody>${specHtml}</tbody></table>
   </div>
 
-  ${camposHtml ? `<div class="sec"><div class="sec-title">Opciones adicionales</div><table><tbody>${camposHtml}</tbody></table></div>` : ''}
+  ${camposHtml ? `<div class="sec"><div class="sec-title">Opciones adicionales</div><table class="spec-table"><tbody>${camposHtml}</tbody></table></div>` : ''}
 
   ${pedido.notasCliente ? `<div class="sec"><div class="sec-title">Notas del pedido</div><div class="notes">${pedido.notasCliente}</div></div>` : ''}
 
@@ -194,7 +229,7 @@ function printQuote(pedido: Pedido, empresaLogoUrl?: string, empresaNombre?: str
       ${unitario != null && pedido.precioBase != null && unitario !== pedido.precioBase ? `<div class="pr"><span class="pl">Precio unitario final</span><span class="pv">$${unitario.toLocaleString('es-AR')}/u</span></div>` : ''}
       ${pedido.cantidad ? `<div class="pr"><span class="pl">Cantidad</span><span class="pv">${pedido.cantidad.toLocaleString('es-AR')} u.</span></div>` : ''}
     </div>
-    <div class="total-row">
+    <div class="total-section">
       <span class="total-label">Total estimado</span>
       <span class="total-amount">$${pedido.precioTotal?.toLocaleString('es-AR') || '—'}</span>
     </div>
@@ -204,6 +239,7 @@ function printQuote(pedido: Pedido, empresaLogoUrl?: string, empresaNombre?: str
     <span>${companyName} · Plataforma de gestión de pedidos y cotizaciones</span>
     <span>Este documento es una cotización, no una factura.</span>
   </div>
+</div>
 </body>
 </html>`)
   win.document.close()
