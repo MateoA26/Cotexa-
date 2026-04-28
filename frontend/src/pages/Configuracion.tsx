@@ -105,14 +105,14 @@ export default function Configuracion() {
       setLogoError('Solo se aceptan JPG, PNG o WebP')
       return
     }
-    if (file.size > 2 * 1024 * 1024) {
-      setLogoError('El archivo no puede superar 2MB')
+    if (file.size > 5 * 1024 * 1024) {
+      setLogoError('El archivo no puede superar 5MB')
       return
     }
     const reader = new FileReader()
     reader.onload = (ev) => {
       const b64 = ev.target?.result as string
-      if (b64.length > 1 * 1024 * 1024) {
+      if (b64.length > 4 * 1024 * 1024) {
         setLogoError('La imagen es demasiado grande. Reducí la resolución.')
         return
       }
@@ -394,13 +394,21 @@ export default function Configuracion() {
               )}
             </div>
             <div className="flex-1">
-              <p className="text-[12px] text-slate-400 mb-3">JPG, PNG o WebP · máx. 2MB · 1MB máx en base64</p>
+              <p className="text-[12px] text-slate-400 mb-3">JPG, PNG o WebP · máx. 5MB · 4MB máx en base64</p>
               <div className="flex flex-wrap gap-2">
                 <label className="flex items-center gap-1.5 h-9 px-4 bg-sky-50 hover:bg-sky-100 text-sky-600 rounded-[10px] text-[13px] font-semibold transition-colors cursor-pointer">
                   <Upload size={13} />
                   Seleccionar imagen
                   <input type="file" accept=".jpg,.jpeg,.png,.webp" className="hidden" onChange={handleLogoSelect} />
                 </label>
+                {empresa?.logoUrl && !logoPreview && (
+                  <button onClick={() => updateLogoMut.mutate('')}
+                    disabled={updateLogoMut.isPending}
+                    className="flex items-center gap-1.5 h-9 px-3 bg-red-50 hover:bg-red-100 text-red-500 rounded-[10px] text-[13px] font-semibold transition-colors">
+                    <Trash2 size={13} />
+                    Eliminar logo
+                  </button>
+                )}
                 {logoPreview && (
                   <button onClick={() => updateLogoMut.mutate(logoPreview)}
                     disabled={updateLogoMut.isPending}
