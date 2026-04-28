@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pedidosApi, archivosApi } from '../services/api'
 import { ESTADO_COLORS, ESTADO_LABELS } from '../utils/estados'
 import { Pedido, ArchivoAdjunto } from '../types'
-import { ClipboardList, Calendar, AlertTriangle, X, FileText, Image, File } from 'lucide-react'
+import { ClipboardList, Calendar, AlertTriangle, X, FileText, Image, File, Check } from 'lucide-react'
 
 type Filtro = 'TODOS' | 'CONFIRMADO' | 'EN_PRODUCCION'
 
@@ -31,10 +31,24 @@ function formatFecha(entregaEst?: string) {
   return new Date(entregaEst).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
+function formatHora(updatedAt: string) {
+  return new Date(updatedAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+}
+
 function getArchivoIcon(tipo: string) {
   if (tipo.includes('pdf')) return <FileText size={13} />
   if (tipo.includes('image')) return <Image size={13} />
   return <File size={13} />
+}
+
+function getSpecs(pedido: Pedido): string[] {
+  return [
+    pedido.largo && pedido.ancho
+      ? `${pedido.largo}×${pedido.ancho}${pedido.alto ? `×${pedido.alto}` : ''} cm`
+      : null,
+    pedido.material || null,
+    pedido.cantidad ? `${pedido.cantidad.toLocaleString('es-AR')} u.` : null,
+  ].filter(Boolean) as string[]
 }
 
 function PedidoCard({ pedido, onAccion, isPending }: {
@@ -42,6 +56,10 @@ function PedidoCard({ pedido, onAccion, isPending }: {
   onAccion: (id: number, estado: string) => void
   isPending: boolean
 }) {
+  const [comentario, setComentario] = useState('')
+  const [exito, setExito] = useState(false)
+  const queryClient = useQueryClient()
+
   const { data: archivos = [] } = useQuery<ArchivoAdjunto[]>({
     queryKey: ['archivos', pedido.id],
     queryFn: async () => {
@@ -50,14 +68,18 @@ function PedidoCard({ pedido, onAccion, isPending }: {
     }
   })
 
+  const comentarioMutation = useMutation({
+    mutationFn: () => pedidosApi.update(pedido.id, { notasAdmin: comentario }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pedidos'] })
+      setComentario('')
+      setExito(true)
+      setTimeout(() => setExito(false), 2000)
+    }
+  })
+
   const urgencia = getUrgencia(pedido.entregaEst)
-  const specs = [
-    pedido.largo && pedido.ancho
-      ? `${pedido.largo}×${pedido.ancho}${pedido.alto ? `×${pedido.alto}` : ''} cm`
-      : null,
-    pedido.material || null,
-    pedido.cantidad ? `${pedido.cantidad.toLocaleString('es-AR')} u.` : null,
-  ].filter(Boolean)
+  const specs = getSpecs(pedido)
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col gap-3">
@@ -111,6 +133,28 @@ function PedidoCard({ pedido, onAccion, isPending }: {
         </div>
       )}
 
+      <div className="flex flex-col gap-1.5">
+        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">Comentario del operario</span>
+        <div className="flex gap-2 items-end">
+          <textarea
+            rows={2}
+            value={comentario}
+            onChange={e => setComentario(e.target.value)}
+            placeholder="Agregar comentario para el equipo..."
+            className="flex-1 px-3 py-2 border border-slate-200 rounded-[10px] text-[13px] text-slate-700 bg-white focus:outline-none focus:border-sky-400 resize-none"
+          />
+          <button
+            onClick={() => comentarioMutation.mutate()}
+            disabled={!comentario.trim() || comentarioMutation.isPending || exito}
+            className={`h-9 px-3.5 text-white text-[13px] font-semibold rounded-[10px] transition-colors disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0 ${
+              exito ? 'bg-emerald-500' : 'bg-sky-500 hover:bg-sky-600'
+            }`}
+          >
+            {exito ? <><Check size={14} /> Enviado</> : 'Enviar'}
+          </button>
+        </div>
+      </div>
+
       {archivos.length > 0 && (
         <div className="flex flex-col gap-2">
           <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">Archivos adjuntos</span>
@@ -151,6 +195,33 @@ function PedidoCard({ pedido, onAccion, isPending }: {
   )
 }
 
+function CompletadoCard({ pedido }: { pedido: Pedido }) {
+  const specs = getSpecs(pedido)
+  return (
+    <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-4 flex flex-col gap-2 opacity-75">
+      <div className="flex items-center justify-between gap-3">
+        <span className="font-mono text-[18px] font-bold text-slate-900">#{pedido.numeroPedido}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-slate-400">{formatHora(pedido.updatedAt)}</span>
+          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600">
+            Listo
+          </span>
+        </div>
+      </div>
+      <p className="text-[15px] font-semibold text-slate-700 leading-tight">{pedido.cliente.nombre}</p>
+      {specs.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {specs.map((spec, i) => (
+            <span key={i} className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[11px] font-medium rounded-md">
+              {spec}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Produccion() {
   const [filtro, setFiltro] = useState<Filtro>('TODOS')
   const [fechaFiltro, setFechaFiltro] = useState('')
@@ -186,6 +257,11 @@ export default function Produccion() {
       if (!p.entregaEst) return false
       return p.entregaEst.slice(0, 10) <= fechaFiltro
     })
+
+  const hoy = new Date().toISOString().slice(0, 10)
+  const completadosHoy = allPedidos
+    .filter(p => p.estado === 'LISTO' && p.updatedAt.slice(0, 10) === hoy)
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
 
   const filtros: { key: Filtro; label: string }[] = [
     { key: 'TODOS', label: 'Todos' },
@@ -266,6 +342,23 @@ export default function Produccion() {
             />
           ))}
         </div>
+      )}
+
+      {!isLoading && completadosHoy.length > 0 && (
+        <>
+          <div className="border-t border-slate-200 my-6" />
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-[16px] font-bold text-slate-700">Completados hoy</h2>
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700">
+              {completadosHoy.length}
+            </span>
+          </div>
+          <div className="flex flex-col gap-3">
+            {completadosHoy.map(pedido => (
+              <CompletadoCard key={pedido.id} pedido={pedido} />
+            ))}
+          </div>
+        </>
       )}
     </div>
   )
