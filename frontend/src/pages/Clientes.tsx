@@ -4,7 +4,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { clientesApi, pedidosApi } from '../services/api'
 import { Cliente, Pedido } from '../types'
 import { ESTADO_LABELS, ESTADO_COLORS } from '../utils/estados'
-import { Plus, X, Users, Package, ChevronRight, Pencil } from 'lucide-react'
+import {
+  Plus, X, Users, Package, ChevronRight, Pencil,
+  Copy, LayoutGrid, List, Search, BarChart2, Check,
+} from 'lucide-react'
 
 const initForm = { nombre: '', email: '', telefono: '', tipo: 'B2C', razonSocial: '', cuit: '', notas: '' }
 
@@ -20,6 +23,11 @@ export default function Clientes() {
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null)
   const [editMode, setEditMode] = useState(false)
   const [editForm, setEditForm] = useState({ nombre: '', email: '', telefono: '', razonSocial: '', cuit: '', notas: '' })
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filtroTipo, setFiltroTipo] = useState<'TODOS' | 'B2B' | 'B2C'>('TODOS')
+  const [sortBy, setSortBy] = useState<'nombre' | 'pedidos' | 'reciente'>('reciente')
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [copiedField, setCopiedField] = useState<string | null>(null)
 
   const { data: clientes = [], isLoading } = useQuery<Cliente[]>({
     queryKey: ['clientes'],
@@ -31,6 +39,27 @@ export default function Clientes() {
     queryFn: () => pedidosApi.getAll({ clienteId: selectedCliente!.id }).then(r => r.data),
     enabled: !!selectedCliente,
   })
+
+  const clientesFiltrados = useMemo(() => {
+    let result = [...clientes]
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      result = result.filter(c =>
+        c.nombre.toLowerCase().includes(q) ||
+        c.email?.toLowerCase().includes(q) ||
+        c.razonSocial?.toLowerCase().includes(q)
+      )
+    }
+    if (filtroTipo !== 'TODOS') {
+      result = result.filter(c => c.tipo === filtroTipo)
+    }
+    result.sort((a, b) => {
+      if (sortBy === 'nombre') return a.nombre.localeCompare(b.nombre, 'es')
+      if (sortBy === 'pedidos') return (b._count?.pedidos ?? 0) - (a._count?.pedidos ?? 0)
+      return b.id - a.id
+    })
+    return result
+  }, [clientes, searchQuery, filtroTipo, sortBy])
 
   const totalFacturado = useMemo(() =>
     clientePedidos.reduce((sum, p) => sum + (p.precioTotal || 0), 0),
@@ -79,6 +108,12 @@ export default function Clientes() {
     setEditMode(true)
   }
 
+  const copyToClipboard = (text: string, field: string) => {
+    navigator.clipboard.writeText(text)
+    setCopiedField(field)
+    setTimeout(() => setCopiedField(null), 1500)
+  }
+
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }))
 
@@ -91,10 +126,14 @@ export default function Clientes() {
   return (
     <div className="max-w-[1360px] mx-auto px-7 py-7">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-7">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Clientes</h1>
-          <p className="text-[13px] text-slate-400 mt-0.5">{clientes.length} cliente{clientes.length !== 1 ? 's' : ''}</p>
+          <p className="text-[13px] text-slate-400 mt-0.5">
+            {clientesFiltrados.length !== clientes.length
+              ? `${clientesFiltrados.length} de ${clientes.length} cliente${clientes.length !== 1 ? 's' : ''}`
+              : `${clientes.length} cliente${clientes.length !== 1 ? 's' : ''}`}
+          </p>
         </div>
         <button onClick={() => setShowModal(true)}
           className="flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-600 text-white px-4 h-9 rounded-[10px] text-[13px] font-semibold transition-colors shadow-[0_4px_12px_-4px_rgba(14,165,233,0.45)]">
@@ -103,7 +142,48 @@ export default function Clientes() {
         </button>
       </div>
 
-      {/* Cards grid */}
+      {/* Toolbar */}
+      {!isLoading && clientes.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-2.5 mb-5">
+          <div className="relative flex-1">
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <input
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Buscar por nombre, email, razón social..."
+              className="w-full h-9 pl-8 pr-3 border border-slate-200 rounded-[10px] text-[13px] focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
+            />
+          </div>
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-[10px]">
+            {(['TODOS', 'B2B', 'B2C'] as const).map(t => (
+              <button key={t} onClick={() => setFiltroTipo(t)}
+                className={`px-3 h-7 rounded-lg text-[12px] font-semibold transition-colors ${
+                  filtroTipo === t
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}>{t}</button>
+            ))}
+          </div>
+          <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}
+            className="h-9 px-3 border border-slate-200 rounded-[10px] text-[13px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white">
+            <option value="reciente">Más reciente</option>
+            <option value="nombre">Nombre A–Z</option>
+            <option value="pedidos">Más pedidos</option>
+          </select>
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-[10px]">
+            <button onClick={() => setViewMode('grid')}
+              className={`p-1.5 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+              <LayoutGrid size={14} />
+            </button>
+            <button onClick={() => setViewMode('list')}
+              className={`p-1.5 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+              <List size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Client list */}
       {isLoading ? (
         <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-[13px] text-slate-400">Cargando...</div>
       ) : clientes.length === 0 ? (
@@ -111,9 +191,59 @@ export default function Clientes() {
           <Users size={32} className="text-slate-200 mx-auto mb-3" />
           <p className="text-[13px] text-slate-400">No hay clientes todavía</p>
         </div>
+      ) : clientesFiltrados.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+          <Search size={28} className="text-slate-200 mx-auto mb-3" />
+          <p className="text-[13px] text-slate-400">Sin resultados para "{searchQuery}"</p>
+          <button onClick={() => { setSearchQuery(''); setFiltroTipo('TODOS') }}
+            className="mt-3 text-[12px] text-sky-500 hover:text-sky-600 font-semibold">
+            Limpiar filtros
+          </button>
+        </div>
+      ) : viewMode === 'list' ? (
+        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+          <div className="grid grid-cols-[1fr_auto_minmax(160px,1fr)_100px_60px_16px] gap-4 px-5 py-2.5 border-b border-slate-100">
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Cliente</span>
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Tipo</span>
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider hidden sm:block">Email</span>
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider hidden md:block">Teléfono</span>
+            <div className="flex items-center gap-1">
+              <BarChart2 size={10} className="text-slate-400" />
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Pedidos</span>
+            </div>
+            <span />
+          </div>
+          {clientesFiltrados.map((c, i) => (
+            <div key={c.id} onClick={() => selectCliente(c)}
+              className={`grid grid-cols-[1fr_auto_minmax(160px,1fr)_100px_60px_16px] gap-4 items-center px-5 py-3.5 cursor-pointer hover:bg-slate-50/80 transition-colors ${
+                i < clientesFiltrados.length - 1 ? 'border-b border-slate-100' : ''
+              }`}>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0"
+                  style={{ background: colorFor(c.nombre) }}>
+                  {initials(c.nombre)}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[13px] font-semibold text-slate-900 truncate">{c.nombre}</p>
+                  {c.razonSocial && <p className="text-[11px] text-slate-400 truncate">{c.razonSocial}</p>}
+                </div>
+              </div>
+              <span className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-[3px] rounded-full ${
+                c.tipo === 'B2B' ? 'bg-sky-50 text-sky-600' : 'bg-purple-50 text-purple-600'
+              }`}>{c.tipo}</span>
+              <span className="text-[12px] text-slate-500 truncate hidden sm:block">{c.email || '—'}</span>
+              <span className="text-[12px] text-slate-500 hidden md:block">{c.telefono || '—'}</span>
+              <div className="flex items-center gap-1.5">
+                <Package size={11} className="text-slate-300" />
+                <span className="text-[12px] font-mono font-semibold text-slate-600">{c._count?.pedidos ?? 0}</span>
+              </div>
+              <ChevronRight size={14} className="text-slate-300" />
+            </div>
+          ))}
+        </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {clientes.map(c => (
+          {clientesFiltrados.map(c => (
             <div key={c.id} onClick={() => selectCliente(c)}
               className="bg-white rounded-2xl border border-slate-200 p-5 cursor-pointer hover:border-sky-200 hover:shadow-[0_4px_16px_-4px_rgba(14,165,233,0.12)] transition-all">
               <div className="flex items-center gap-3 mb-4">
@@ -263,21 +393,39 @@ export default function Clientes() {
                   <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-3">Información</p>
                   <div className="space-y-2.5">
                     {selectedCliente.email && (
-                      <div className="flex justify-between text-[13px]">
+                      <div className="flex items-center justify-between text-[13px]">
                         <span className="text-slate-400">Email</span>
-                        <span className="text-slate-900 font-medium">{selectedCliente.email}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-slate-900 font-medium">{selectedCliente.email}</span>
+                          <button onClick={() => copyToClipboard(selectedCliente.email!, 'email')}
+                            className="p-0.5 text-slate-300 hover:text-slate-500 transition-colors flex-shrink-0">
+                            {copiedField === 'email' ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} />}
+                          </button>
+                        </div>
                       </div>
                     )}
                     {selectedCliente.telefono && (
-                      <div className="flex justify-between text-[13px]">
+                      <div className="flex items-center justify-between text-[13px]">
                         <span className="text-slate-400">Teléfono</span>
-                        <span className="text-slate-900 font-medium">{selectedCliente.telefono}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-slate-900 font-medium">{selectedCliente.telefono}</span>
+                          <button onClick={() => copyToClipboard(selectedCliente.telefono!, 'telefono')}
+                            className="p-0.5 text-slate-300 hover:text-slate-500 transition-colors flex-shrink-0">
+                            {copiedField === 'telefono' ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} />}
+                          </button>
+                        </div>
                       </div>
                     )}
                     {selectedCliente.cuit && (
-                      <div className="flex justify-between text-[13px]">
+                      <div className="flex items-center justify-between text-[13px]">
                         <span className="text-slate-400">CUIT</span>
-                        <span className="text-slate-900 font-medium font-mono">{selectedCliente.cuit}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-slate-900 font-medium font-mono">{selectedCliente.cuit}</span>
+                          <button onClick={() => copyToClipboard(selectedCliente.cuit!, 'cuit')}
+                            className="p-0.5 text-slate-300 hover:text-slate-500 transition-colors flex-shrink-0">
+                            {copiedField === 'cuit' ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} />}
+                          </button>
+                        </div>
                       </div>
                     )}
                     <div className="flex justify-between text-[13px]">
