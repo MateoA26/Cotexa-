@@ -41,16 +41,19 @@ router.delete('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
     })
     if (!cliente) return res.status(404).json({ error: 'Cliente no encontrado' })
 
-    const pedidosActivos = await prisma.pedido.count({
+    await prisma.pedido.updateMany({
       where: {
         clienteId,
         estado: { notIn: ['ENTREGADO', 'CANCELADO'] }
-      }
+      },
+      data: { estado: 'CANCELADO' }
     })
-    if (pedidosActivos > 0) {
-      return res.status(400).json({ error: `No se puede eliminar: el cliente tiene ${pedidosActivos} pedido(s) activo(s)` })
-    }
 
+    const pedidoIds = (await prisma.pedido.findMany({ where: { clienteId }, select: { id: true } })).map(p => p.id)
+    await prisma.valorCampo.deleteMany({ where: { pedido: { clienteId } } })
+    await prisma.eventoTracking.deleteMany({ where: { pedido: { clienteId } } })
+    await prisma.notificacion.deleteMany({ where: { pedidoId: { in: pedidoIds } } })
+    await prisma.archivoAdjunto.deleteMany({ where: { pedido: { clienteId } } })
     await prisma.pedido.deleteMany({ where: { clienteId } })
     await prisma.cliente.delete({ where: { id: clienteId } })
     res.json({ ok: true })
