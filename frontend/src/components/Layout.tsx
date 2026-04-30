@@ -80,7 +80,13 @@ export default function Layout() {
   }, [])
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <>
+    {import.meta.env.VITE_ENV === 'testing' && (
+      <div className="w-full bg-amber-400 text-amber-900 text-center text-[12px] font-bold py-1.5 z-50 fixed top-0 left-0">
+        ⚠️ AMBIENTE DE TESTING — Los datos no son reales
+      </div>
+    )}
+    <div className={`flex h-screen bg-slate-50 overflow-hidden ${import.meta.env.VITE_ENV === 'testing' ? 'mt-7' : ''}`}>
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/50 z-20 md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
@@ -239,5 +245,6 @@ export default function Layout() {
         </main>
       </div>
     </div>
+    </>
   )
 }
