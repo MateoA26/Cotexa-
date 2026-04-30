@@ -66,6 +66,20 @@ function Delta({ value, light }: { value: number; light?: boolean }) {
   )
 }
 
+function formatValue(value: string, mobile?: boolean): string {
+  if (!mobile) return value
+  // Si empieza con $ y tiene más de 10 caracteres, abreviarlo
+  if (value.startsWith('$')) {
+    const num = Number(value.replace(/\$|\.|\s/g, '').replace(',', '.'))
+    if (!isNaN(num)) {
+      if (num >= 1_000_000_000) return `$${(num / 1_000_000_000).toFixed(1)}B`
+      if (num >= 1_000_000) return `$${(num / 1_000_000).toFixed(1)}M`
+      if (num >= 1_000) return `$${(num / 1_000).toFixed(0)}K`
+    }
+  }
+  return value
+}
+
 function MetricCard({ label, value, icon: Icon, tint, delta, spark }: {
   label: string; value: string; icon: any; tint: string; delta?: number; spark: number[]
 }) {
@@ -78,7 +92,10 @@ function MetricCard({ label, value, icon: Icon, tint, delta, spark }: {
         </div>
       </div>
       <div className="mt-4 flex items-baseline gap-2.5 flex-wrap">
-        <div className="text-[16px] sm:text-[28px] font-bold text-slate-900 tracking-tight tabular-nums leading-none font-mono truncate">{value}</div>
+        <div className="text-[22px] font-bold text-slate-900 tracking-tight tabular-nums leading-none font-mono">
+          <span className="hidden sm:inline">{value}</span>
+          <span className="sm:hidden">{formatValue(value, true)}</span>
+        </div>
         {delta !== undefined && <Delta value={delta} />}
       </div>
       <div className="mt-3.5 -mx-1.5 h-9">
