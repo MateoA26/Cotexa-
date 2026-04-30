@@ -48,7 +48,8 @@ export const pedidosApi = {
 export const clientesApi = {
   getAll: () => api.get('/clientes'),
   create: (data: any) => api.post('/clientes', data),
-  update: (id: number, data: any) => api.patch(`/clientes/${id}`, data)
+  update: (id: number, data: any) => api.patch(`/clientes/${id}`, data),
+  delete: (id: number) => api.delete(`/clientes/${id}`),
 }
 
 export const notificacionesApi = {

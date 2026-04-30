@@ -6,7 +6,7 @@ import { Cliente, Pedido } from '../types'
 import { ESTADO_LABELS, ESTADO_COLORS } from '../utils/estados'
 import {
   Plus, X, Users, Package, ChevronRight, Pencil,
-  Copy, LayoutGrid, List, Search, BarChart2, Check,
+  Copy, LayoutGrid, List, Search, BarChart2, Check, Trash2,
 } from 'lucide-react'
 
 const initForm = { nombre: '', email: '', telefono: '', tipo: 'B2C', razonSocial: '', cuit: '', notas: '' }
@@ -28,6 +28,7 @@ export default function Clientes() {
   const [sortBy, setSortBy] = useState<'nombre' | 'pedidos' | 'reciente'>('reciente')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [copiedField, setCopiedField] = useState<string | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
 
   const { data: clientes = [], isLoading } = useQuery<Cliente[]>({
     queryKey: ['clientes'],
@@ -87,6 +88,19 @@ export default function Clientes() {
       queryClient.invalidateQueries({ queryKey: ['pedidos', 'cliente', selectedCliente!.id] })
       setSelectedCliente(res.data)
       setEditMode(false)
+    }
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => clientesApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientes'] })
+      setConfirmDeleteId(null)
+      if (selectedCliente?.id === confirmDeleteId) setSelectedCliente(null)
+    },
+    onError: (err: any) => {
+      alert(err.response?.data?.error || 'Error al eliminar cliente')
+      setConfirmDeleteId(null)
     }
   })
 
@@ -245,7 +259,12 @@ export default function Clientes() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {clientesFiltrados.map(c => (
             <div key={c.id} onClick={() => selectCliente(c)}
-              className="bg-white rounded-2xl border border-slate-200 p-5 cursor-pointer hover:border-sky-200 hover:shadow-[0_4px_16px_-4px_rgba(14,165,233,0.12)] transition-all">
+              className="relative bg-white rounded-2xl border border-slate-200 p-5 cursor-pointer hover:border-sky-200 hover:shadow-[0_4px_16px_-4px_rgba(14,165,233,0.12)] transition-all">
+              <button
+                onClick={e => { e.stopPropagation(); setConfirmDeleteId(c.id) }}
+                className="absolute top-3 right-3 p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                <Trash2 size={13} />
+              </button>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-11 h-11 rounded-full flex items-center justify-center text-[15px] font-bold text-white flex-shrink-0"
                   style={{ background: colorFor(c.nombre) }}>
@@ -494,6 +513,32 @@ export default function Clientes() {
             )}
           </div>
         </>
+      )}
+
+      {/* Delete confirmation modal */}
+      {confirmDeleteId !== null && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Trash2 size={20} className="text-red-500" />
+            </div>
+            <h2 className="text-[15px] font-bold text-slate-900 text-center mb-2">¿Eliminar cliente?</h2>
+            <p className="text-[13px] text-slate-500 text-center mb-6">
+              Esta acción eliminará al cliente y todos sus pedidos. No se puede deshacer.
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmDeleteId(null)}
+                className="flex-1 h-10 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-[10px] text-[13px] font-semibold transition-colors">
+                Cancelar
+              </button>
+              <button onClick={() => deleteMutation.mutate(confirmDeleteId!)}
+                disabled={deleteMutation.isPending}
+                className="flex-1 h-10 bg-red-500 hover:bg-red-600 text-white rounded-[10px] text-[13px] font-semibold transition-colors disabled:opacity-40">
+                {deleteMutation.isPending ? 'Eliminando...' : 'Sí, eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* New client modal */}
