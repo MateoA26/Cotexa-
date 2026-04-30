@@ -78,7 +78,7 @@ function MetricCard({ label, value, icon: Icon, tint, delta, spark }: {
         </div>
       </div>
       <div className="mt-4 flex items-baseline gap-2.5 flex-wrap">
-        <div className="text-[28px] font-bold text-slate-900 tracking-tight tabular-nums leading-none font-mono">{value}</div>
+        <div className="text-[22px] sm:text-[28px] font-bold text-slate-900 tracking-tight tabular-nums leading-none font-mono break-all">{value}</div>
         {delta !== undefined && <Delta value={delta} />}
       </div>
       <div className="mt-3.5 -mx-1.5 h-9">
