@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { LayoutDashboard, Package, Users, LogOut, Menu, X, Settings, Search } from 'lucide-react'
+import { LayoutDashboard, Package, Users, LogOut, Menu, X, Settings, Search, Calculator } from 'lucide-react'
 import NotificationBell from './NotificationBell'
 import { useQuery } from '@tanstack/react-query'
 import { pedidosApi, clientesApi } from '../services/api'
@@ -30,7 +30,10 @@ export default function Layout() {
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/pedidos', icon: Package, label: 'Pedidos' },
     { to: '/clientes', icon: Users, label: 'Clientes' },
-    ...(isAdmin ? [{ to: '/configuracion', icon: Settings, label: 'Configuración' }] : []),
+    ...(isAdmin ? [
+      { to: '/configuracion', icon: Settings, label: 'Configuración' },
+      { to: '/configuracion/cotizador', icon: Calculator, label: 'Cotizador' },
+    ] : []),
   ]
 
   const { data: pedidos = [] } = useQuery<Pedido[]>({

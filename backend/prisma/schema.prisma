@@ -23,8 +23,11 @@ model Empresa {
   campos         CampoCustom[]
   notificaciones Notificacion[]
   precioConfig   PrecioConfig?
-  materiales     Material[]
-  tramos         TramoDescuento[]
+  materiales        Material[]
+  tramos            TramoDescuento[]
+  tiposCaja         TipoCaja[]
+  proveedoresMat    ProveedorMaterial[]
+  costosAdicionales CostoAdicional[]
 }
 
 model Notificacion {
@@ -156,6 +159,36 @@ model ValorCampo {
 
   pedido Pedido      @relation(fields: [pedidoId], references: [id])
   campo  CampoCustom @relation(fields: [campoId], references: [id])
+}
+
+model TipoCaja {
+  id           Int     @id @default(autoincrement())
+  empresaId    Int
+  nombre       String
+  formulaAncho String
+  formulaLargo String
+  activo       Boolean @default(true)
+  empresa      Empresa @relation(fields: [empresaId], references: [id])
+}
+
+model ProveedorMaterial {
+  id        Int     @id @default(autoincrement())
+  empresaId Int
+  proveedor String
+  material  String
+  precioM2  Float
+  activo    Boolean @default(true)
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+}
+
+model CostoAdicional {
+  id        Int     @id @default(autoincrement())
+  empresaId Int
+  nombre    String
+  tipo      String
+  valor     Float
+  activo    Boolean @default(true)
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
 }
 
 model ArchivoAdjunto {

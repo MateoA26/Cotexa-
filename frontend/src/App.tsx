@@ -10,6 +10,7 @@ import NuevoPedido from './pages/NuevoPedido'
 import DetallePedido from './pages/DetallePedido'
 import Clientes from './pages/Clientes'
 import Configuracion from './pages/Configuracion'
+import Cotizador from './pages/Cotizador'
 import SuperAdminEmpresas from './pages/superadmin/Empresas'
 import SuperAdminUsuarios from './pages/superadmin/Usuarios'
 import SuperAdminEmpresaDetalle from './pages/superadmin/EmpresaDetalle'
@@ -69,6 +70,7 @@ export default function App() {
         <Route path="pedidos/:id" element={<DetallePedido />} />
         <Route path="clientes" element={<Clientes />} />
         <Route path="configuracion" element={<Configuracion />} />
+        <Route path="configuracion/cotizador" element={<Cotizador />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
