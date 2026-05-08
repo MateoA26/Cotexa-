@@ -396,6 +396,34 @@ export default function DetallePedido() {
     return { anchoPlancha, largoPlancha, superficieM2, costoBase, costosExtra, costoTotal, precioUnitario, gananciaUnitaria, precioTotal }
   }, [isLumapack, lumaTypoCajaId, lumaE, lumaF, lumaG, lumaProveedorMatId, lumaFactor, lumaCostosSeleccionados, tiposCaja, proveedoresMat, costosAdicionales, editCantidad])
 
+  const lumaDetalle = useMemo(() => {
+    if (!isLumapack || !pedido) return null
+    try {
+      const datos = JSON.parse(pedido.notasAdmin || '{}')
+      const tipoCaja = tiposCaja.find((t: any) => t.id === datos.lumapack?.tipoCajaId)
+      const provMat = proveedoresMat.find((p: any) => p.id === datos.lumapack?.proveedorMatId)
+      const E = pedido.alto || 0
+      const F = pedido.ancho || 0
+      const G = pedido.largo || 0
+      const cantidad = pedido.cantidad || 0
+      const factor = datos.lumapack?.factor ?? 0.5
+      if (!tipoCaja || !provMat || !E || !F || !G || !cantidad) return null
+      const evalFormula = (formula: string) => {
+        try {
+          const expr = formula.replace(/E/g, String(E)).replace(/F/g, String(F)).replace(/G/g, String(G))
+          return Function('"use strict"; return (' + expr + ')')()
+        } catch { return 0 }
+      }
+      const anchoPlancha = evalFormula(tipoCaja.formulaAncho)
+      const largoPlancha = evalFormula(tipoCaja.formulaLargo)
+      const superficieM2 = (anchoPlancha * largoPlancha) / 1000000
+      const costoBase = superficieM2 * provMat.precioM2 * cantidad
+      const precioUnitario = (costoBase / cantidad) * (1 + factor)
+      const gananciaUnitaria = precioUnitario - (costoBase / cantidad)
+      return { anchoPlancha, largoPlancha, superficieM2, costoBase, precioUnitario, gananciaUnitaria, factor, tipoCaja, provMat }
+    } catch { return null }
+  }, [isLumapack, pedido, tiposCaja, proveedoresMat])
+
   const startEditing = () => {
     if (!pedido) return
     setEditLargo(pedido.largo?.toString() ?? '')
@@ -414,25 +442,33 @@ export default function DetallePedido() {
     if (isLumapack) {
       try {
         const datos = JSON.parse(pedido.notasAdmin || '{}')
-        if (datos.lumapack) {
-          setLumaTipoCajaId(datos.lumapack.tipoCajaId || null)
-          setLumaE(String(pedido.alto || ''))
-          setLumaF(String(pedido.ancho || ''))
-          setLumaG(String(pedido.largo || ''))
-          setLumaProveedorMatId(datos.lumapack.proveedorMatId || null)
-          setLumaFactor(datos.lumapack.factor || 0.5)
-        }
+        setLumaTipoCajaId(datos.lumapack?.tipoCajaId || null)
+        setLumaProveedorMatId(datos.lumapack?.proveedorMatId || null)
+        setLumaFactor(datos.lumapack?.factor ?? 0.5)
       } catch {
-        setLumaE(String(pedido.alto || ''))
-        setLumaF(String(pedido.ancho || ''))
-        setLumaG(String(pedido.largo || ''))
+        setLumaTipoCajaId(null)
+        setLumaProveedorMatId(null)
+        setLumaFactor(0.5)
       }
+      // Siempre inicializar E/F/G desde el pedido (largo=G, ancho=F, alto=E)
+      setLumaE(String(pedido.alto || ''))
+      setLumaF(String(pedido.ancho || ''))
+      setLumaG(String(pedido.largo || ''))
     }
   }
 
   const saveEdit = async () => {
+    if (!pedido) return
     if (isLumapack && lumaResultado) {
       const provMat = proveedoresMat.find((p: any) => p.id === lumaProveedorMatId)
+      // Preservar notas internas existentes y agregar datos lumapack
+      const notasAdminActual = (() => {
+        try { return JSON.parse(pedido.notasAdmin || '{}') } catch { return {} }
+      })()
+      const notasAdminNuevo = JSON.stringify({
+        ...notasAdminActual,
+        lumapack: { tipoCajaId: lumaTypoCajaId, proveedorMatId: lumaProveedorMatId, factor: lumaFactor }
+      })
       await mutation.mutateAsync({
         largo: Number(lumaG),
         ancho: Number(lumaF),
@@ -443,7 +479,7 @@ export default function DetallePedido() {
         notasCliente: editNotasCliente,
         precioBase: lumaResultado.costoBase,
         precioTotal: lumaResultado.precioTotal,
-        notasAdmin: JSON.stringify({ lumapack: { tipoCajaId: lumaTypoCajaId, proveedorMatId: lumaProveedorMatId, factor: lumaFactor } })
+        notasAdmin: notasAdminNuevo
       })
       setIsEditing(false)
       return
@@ -837,18 +873,39 @@ export default function DetallePedido() {
             <div className="bg-white rounded-2xl border border-slate-200 p-5">
               <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">Especificaciones</p>
               <div className="space-y-2.5">
-                {[
-                  ['Medidas', pedido.largo != null ? `${pedido.largo} × ${pedido.ancho} × ${pedido.alto} cm` : null],
-                  ['Material', pedido.material],
-                  ['Impresión', pedido.impresion],
-                  ['Cantidad', pedido.cantidad != null ? `${pedido.cantidad.toLocaleString('es-AR')} u.` : null],
-                  ['Entrega', pedido.entregaEst ? new Date(pedido.entregaEst).toLocaleDateString('es-AR') : null],
-                ].filter(([, v]) => v).map(([label, value]) => (
-                  <div key={label as string} className="flex justify-between text-[13px]">
-                    <span className="text-slate-400">{label}</span>
-                    <span className="font-medium text-slate-900">{value}</span>
-                  </div>
-                ))}
+                {isLumapack ? (
+                  <>
+                    {[
+                      ['Tipo de caja', lumaDetalle?.tipoCaja?.nombre ?? null],
+                      ['Alto (E)', pedido.alto != null ? `${pedido.alto} mm` : null],
+                      ['Ancho (F)', pedido.ancho != null ? `${pedido.ancho} mm` : null],
+                      ['Largo (G)', pedido.largo != null ? `${pedido.largo} mm` : null],
+                      ['Material', pedido.material],
+                      ['Cantidad', pedido.cantidad != null ? `${pedido.cantidad.toLocaleString('es-AR')} u.` : null],
+                      ['Entrega', pedido.entregaEst ? new Date(pedido.entregaEst).toLocaleDateString('es-AR') : null],
+                    ].filter(([, v]) => v).map(([label, value]) => (
+                      <div key={label as string} className="flex justify-between text-[13px]">
+                        <span className="text-slate-400">{label}</span>
+                        <span className="font-medium text-slate-900">{value}</span>
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    {[
+                      ['Medidas', pedido.largo != null ? `${pedido.largo} × ${pedido.ancho} × ${pedido.alto} cm` : null],
+                      ['Material', pedido.material],
+                      ['Impresión', pedido.impresion],
+                      ['Cantidad', pedido.cantidad != null ? `${pedido.cantidad.toLocaleString('es-AR')} u.` : null],
+                      ['Entrega', pedido.entregaEst ? new Date(pedido.entregaEst).toLocaleDateString('es-AR') : null],
+                    ].filter(([, v]) => v).map(([label, value]) => (
+                      <div key={label as string} className="flex justify-between text-[13px]">
+                        <span className="text-slate-400">{label}</span>
+                        <span className="font-medium text-slate-900">{value}</span>
+                      </div>
+                    ))}
+                  </>
+                )}
                 {pedido.precioTotal && (
                   <div className="flex justify-between text-[13px] border-t border-slate-100 pt-2.5 mt-2.5">
                     <span className="font-semibold text-slate-900">Total</span>
@@ -864,6 +921,44 @@ export default function DetallePedido() {
               </div>
             </div>
           </div>
+
+          {isLumapack && lumaDetalle && (
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-4">
+              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">Plancha y costos</p>
+              <div className="space-y-2.5">
+                <div className="flex justify-between text-[13px]">
+                  <span className="text-slate-400">Ancho plancha</span>
+                  <span className="font-mono font-medium text-slate-900">{lumaDetalle.anchoPlancha.toFixed(1)} mm</span>
+                </div>
+                <div className="flex justify-between text-[13px]">
+                  <span className="text-slate-400">Largo plancha</span>
+                  <span className="font-mono font-medium text-slate-900">{lumaDetalle.largoPlancha.toFixed(1)} mm</span>
+                </div>
+                <div className="flex justify-between text-[13px]">
+                  <span className="text-slate-400">Superficie</span>
+                  <span className="font-mono font-medium text-slate-900">{lumaDetalle.superficieM2.toFixed(4)} m²</span>
+                </div>
+                <div className="border-t border-slate-100 pt-2.5 mt-2.5 space-y-1.5">
+                  <div className="flex justify-between text-[13px]">
+                    <span className="text-slate-400">Costo cartón</span>
+                    <span className="font-mono font-medium text-slate-900">${lumaDetalle.costoBase.toLocaleString('es-AR', { maximumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex justify-between text-[13px]">
+                    <span className="text-slate-400">Factor de margen</span>
+                    <span className="font-medium text-slate-900">{(lumaDetalle.factor * 100).toFixed(0)}%</span>
+                  </div>
+                  <div className="flex justify-between text-[13px]">
+                    <span className="text-slate-400">Precio unitario</span>
+                    <span className="font-mono font-semibold text-sky-600">${lumaDetalle.precioUnitario.toLocaleString('es-AR', { maximumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex justify-between text-[13px]">
+                    <span className="text-slate-400">Ganancia unitaria</span>
+                    <span className="font-mono font-medium text-emerald-600">${lumaDetalle.gananciaUnitaria.toLocaleString('es-AR', { maximumFractionDigits: 2 })}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {pedido.valoresCampos && pedido.valoresCampos.length > 0 && (
             <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-4">
