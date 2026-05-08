@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { pedidosApi, camposApi, archivosApi, empresaApi, preciosApi } from '../services/api'
+import api, { pedidosApi, camposApi, archivosApi, empresaApi, preciosApi } from '../services/api'
 import { Pedido, CampoCustom, ArchivoAdjunto } from '../types'
 import { ESTADO_LABELS, ESTADO_COLORS, ESTADOS_ORDEN } from '../utils/estados'
 import { ArrowLeft, Edit2, Download, Calculator, FileText, Clock, CheckCircle2, Package, Truck, XCircle, Upload, Trash2, Image as ImageIcon, File as FileIcon, MessageSquare } from 'lucide-react'
@@ -269,6 +269,14 @@ export default function DetallePedido() {
   const [editDescuentoPct, setEditDescuentoPct] = useState(0)
   const [editBreakdown, setEditBreakdown] = useState<BreakdownItem[]>([])
 
+  const [lumaTypoCajaId, setLumaTipoCajaId] = useState<number | null>(null)
+  const [lumaE, setLumaE] = useState('')
+  const [lumaF, setLumaF] = useState('')
+  const [lumaG, setLumaG] = useState('')
+  const [lumaProveedorMatId, setLumaProveedorMatId] = useState<number | null>(null)
+  const [lumaFactor, setLumaFactor] = useState(0.5)
+  const [lumaCostosSeleccionados, setLumaCostosSeleccionados] = useState<number[]>([])
+
   const { data: pedido, isLoading } = useQuery<Pedido>({
     queryKey: ['pedido', id],
     queryFn: async () => {
@@ -292,6 +300,23 @@ export default function DetallePedido() {
   const { data: empresa } = useQuery({
     queryKey: ['empresa'],
     queryFn: () => empresaApi.get().then(r => r.data),
+  })
+  const isLumapack = empresa?.slug === 'lumapack'
+
+  const { data: tiposCaja = [] } = useQuery({
+    queryKey: ['tipos-caja'],
+    queryFn: () => api.get('/cotizador-avanzado/tipos-caja').then(r => r.data),
+    enabled: isLumapack,
+  })
+  const { data: proveedoresMat = [] } = useQuery({
+    queryKey: ['proveedores-mat'],
+    queryFn: () => api.get('/cotizador-avanzado/proveedores').then(r => r.data),
+    enabled: isLumapack,
+  })
+  const { data: costosAdicionales = [] } = useQuery({
+    queryKey: ['costos-adicionales'],
+    queryFn: () => api.get('/cotizador-avanzado/costos').then(r => r.data),
+    enabled: isLumapack,
   })
 
   const { data: precioConfig } = useQuery({
@@ -335,6 +360,42 @@ export default function DetallePedido() {
     setEditBreakdown(result.breakdown)
   }, [editCantidad, editMaterialId, editValoresCampos, campos, isEditing, precioConfig, materiales, tramos])
 
+  const lumaResultado = useMemo(() => {
+    if (!isLumapack) return null
+    const tipoCaja = tiposCaja.find((t: any) => t.id === lumaTypoCajaId)
+    const provMat = proveedoresMat.find((p: any) => p.id === lumaProveedorMatId)
+    const E = Number(lumaE), F = Number(lumaF), G = Number(lumaG)
+    const cantidad = Number(editCantidad)
+    if (!tipoCaja || !provMat || !E || !F || !G || !cantidad) return null
+
+    const evalFormula = (formula: string) => {
+      try {
+        const expr = formula.replace(/E/g, String(E)).replace(/F/g, String(F)).replace(/G/g, String(G))
+        return Function('"use strict"; return (' + expr + ')')()
+      } catch { return 0 }
+    }
+
+    const anchoPlancha = evalFormula(tipoCaja.formulaAncho)
+    const largoPlancha = evalFormula(tipoCaja.formulaLargo)
+    const superficieM2 = (anchoPlancha * largoPlancha) / 1000000
+    const costoBase = superficieM2 * provMat.precioM2 * cantidad
+
+    let costosExtra = 0
+    lumaCostosSeleccionados.forEach((cid: number) => {
+      const c = costosAdicionales.find((x: any) => x.id === cid)
+      if (!c) return
+      if (c.tipo === 'POR_M2') costosExtra += c.valor * superficieM2 * cantidad
+      else costosExtra += c.valor * cantidad
+    })
+
+    const costoTotal = costoBase + costosExtra
+    const precioUnitario = (costoTotal / cantidad) * (1 + lumaFactor)
+    const gananciaUnitaria = precioUnitario - (costoTotal / cantidad)
+    const precioTotal = precioUnitario * cantidad
+
+    return { anchoPlancha, largoPlancha, superficieM2, costoBase, costosExtra, costoTotal, precioUnitario, gananciaUnitaria, precioTotal }
+  }, [isLumapack, lumaTypoCajaId, lumaE, lumaF, lumaG, lumaProveedorMatId, lumaFactor, lumaCostosSeleccionados, tiposCaja, proveedoresMat, costosAdicionales, editCantidad])
+
   const startEditing = () => {
     if (!pedido) return
     setEditLargo(pedido.largo?.toString() ?? '')
@@ -350,9 +411,43 @@ export default function DetallePedido() {
     pedido.valoresCampos?.forEach(v => { vc[v.campoId] = v.valor })
     setEditValoresCampos(vc)
     setIsEditing(true)
+    if (isLumapack) {
+      try {
+        const datos = JSON.parse(pedido.notasAdmin || '{}')
+        if (datos.lumapack) {
+          setLumaTipoCajaId(datos.lumapack.tipoCajaId || null)
+          setLumaE(String(pedido.alto || ''))
+          setLumaF(String(pedido.ancho || ''))
+          setLumaG(String(pedido.largo || ''))
+          setLumaProveedorMatId(datos.lumapack.proveedorMatId || null)
+          setLumaFactor(datos.lumapack.factor || 0.5)
+        }
+      } catch {
+        setLumaE(String(pedido.alto || ''))
+        setLumaF(String(pedido.ancho || ''))
+        setLumaG(String(pedido.largo || ''))
+      }
+    }
   }
 
   const saveEdit = async () => {
+    if (isLumapack && lumaResultado) {
+      const provMat = proveedoresMat.find((p: any) => p.id === lumaProveedorMatId)
+      await mutation.mutateAsync({
+        largo: Number(lumaG),
+        ancho: Number(lumaF),
+        alto: Number(lumaE),
+        material: provMat ? `${provMat.proveedor} — ${provMat.material}` : '',
+        cantidad: Number(editCantidad),
+        entregaEst: editEntregaEst || null,
+        notasCliente: editNotasCliente,
+        precioBase: lumaResultado.costoBase,
+        precioTotal: lumaResultado.precioTotal,
+        notasAdmin: JSON.stringify({ lumapack: { tipoCajaId: lumaTypoCajaId, proveedorMatId: lumaProveedorMatId, factor: lumaFactor } })
+      })
+      setIsEditing(false)
+      return
+    }
     const selectedMat = materiales.find(m => String(m.id) === editMaterialId) || null
     await mutation.mutateAsync({
       largo: editLargo ? Number(editLargo) : null,
@@ -479,142 +574,250 @@ export default function DetallePedido() {
       {/* Edit mode */}
       {isEditing ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
-          <div className="lg:col-span-2 space-y-4">
-            <div className="bg-white rounded-2xl border border-sky-200 ring-1 ring-sky-100 p-5">
-              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">Especificaciones</p>
-              <div className="grid grid-cols-3 gap-3 mb-3">
-                <div>
-                  <label className={lc}>Largo (cm)</label>
-                  <input type="number" value={editLargo} onChange={e => setEditLargo(e.target.value)} placeholder="0" min="0" step="0.1" className={ic} />
-                </div>
-                <div>
-                  <label className={lc}>Ancho (cm)</label>
-                  <input type="number" value={editAncho} onChange={e => setEditAncho(e.target.value)} placeholder="0" min="0" step="0.1" className={ic} />
-                </div>
-                <div>
-                  <label className={lc}>Alto (cm)</label>
-                  <input type="number" value={editAlto} onChange={e => setEditAlto(e.target.value)} placeholder="0" min="0" step="0.1" className={ic} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3 mb-3">
-                <div>
-                  <label className={lc}>Material</label>
-                  <select value={editMaterialId} onChange={e => setEditMaterialId(e.target.value)} className={ic}>
-                    <option value="">— Sin material —</option>
-                    {materialesActivos.map(m => (
-                      <option key={m.id} value={m.id}>
-                        {m.nombre}{m.precioUnitario > 0 ? ` (+$${m.precioUnitario}/u)` : ''}
-                      </option>
-                    ))}
+          {isLumapack ? (
+            <div className="lg:col-span-2 space-y-4">
+              <div className="bg-white rounded-2xl border border-sky-200 ring-1 ring-sky-100 p-5">
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">Caja</p>
+                <div className="mb-3">
+                  <label className={lc}>Tipo de caja</label>
+                  <select value={lumaTypoCajaId || ''} onChange={e => setLumaTipoCajaId(Number(e.target.value))} className={ic}>
+                    <option value="">— Seleccionar tipo —</option>
+                    {tiposCaja.map((t: any) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
                   </select>
                 </div>
-                <div>
-                  <label className={lc}>Impresión</label>
-                  <select value={editImpresion} onChange={e => setEditImpresion(e.target.value)} className={ic}>
-                    {IMPRESIONES.map(i => (
-                      <option key={i.value} value={i.value}>{i.label}</option>
-                    ))}
-                  </select>
+                <div className="grid grid-cols-3 gap-3">
+                  <div><label className={lc}>Alto (E) mm</label><input type="number" value={lumaE} onChange={e => setLumaE(e.target.value)} placeholder="0" className={ic} /></div>
+                  <div><label className={lc}>Ancho (F) mm</label><input type="number" value={lumaF} onChange={e => setLumaF(e.target.value)} placeholder="0" className={ic} /></div>
+                  <div><label className={lc}>Largo (G) mm</label><input type="number" value={lumaG} onChange={e => setLumaG(e.target.value)} placeholder="0" className={ic} /></div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className={lc}>Cantidad de unidades</label>
-                  <input type="number" value={editCantidad} onChange={e => setEditCantidad(e.target.value)} min="1" className={ic} />
-                  {editDescuentoPct > 0 && (
-                    <p className="text-[11px] text-emerald-600 mt-1 font-medium">✓ Descuento: -{editDescuentoPct}%</p>
-                  )}
+
+              <div className="bg-white rounded-2xl border border-sky-200 ring-1 ring-sky-100 p-5">
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">Material</p>
+                <select value={lumaProveedorMatId || ''} onChange={e => setLumaProveedorMatId(Number(e.target.value))} className={ic}>
+                  <option value="">— Seleccionar proveedor/material —</option>
+                  {proveedoresMat.map((p: any) => <option key={p.id} value={p.id}>{p.proveedor} — {p.material} (${p.precioM2}/m²)</option>)}
+                </select>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-sky-200 ring-1 ring-sky-100 p-5">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><label className={lc}>Cantidad</label><input type="number" value={editCantidad} onChange={e => setEditCantidad(e.target.value)} min="1" className={ic} /></div>
+                  <div><label className={lc}>Entrega estimada</label><input type="date" value={editEntregaEst} onChange={e => setEditEntregaEst(e.target.value)} className={ic} /></div>
                 </div>
-                <div>
-                  <label className={lc}>Entrega estimada</label>
-                  <input type="date" value={editEntregaEst} onChange={e => setEditEntregaEst(e.target.value)} className={ic} />
+              </div>
+
+              <div className="bg-white rounded-2xl border border-sky-200 ring-1 ring-sky-100 p-5">
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-3">Factor de margen</p>
+                <div className="flex items-center gap-4">
+                  <input type="range" min={0} max={1} step={0.05} value={lumaFactor} onChange={e => setLumaFactor(Number(e.target.value))} className="flex-1 accent-sky-500" />
+                  <span className="text-[15px] font-bold text-sky-600 w-12 text-right">{(lumaFactor * 100).toFixed(0)}%</span>
                 </div>
+              </div>
+
+              {costosAdicionales.length > 0 && (
+                <div className="bg-white rounded-2xl border border-sky-200 ring-1 ring-sky-100 p-5">
+                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-3">Costos adicionales</p>
+                  <div className="space-y-2">
+                    {costosAdicionales.map((c: any) => (
+                      <label key={c.id} className="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" checked={lumaCostosSeleccionados.includes(c.id)}
+                          onChange={e => setLumaCostosSeleccionados(prev => e.target.checked ? [...prev, c.id] : prev.filter((x: number) => x !== c.id))}
+                          className="accent-sky-500" />
+                        <span className="text-[13px] text-slate-700">{c.nombre}</span>
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">{c.tipo === 'POR_M2' ? 'Por m²' : 'Fijo'}</span>
+                        <span className="text-[12px] font-mono text-slate-500 ml-auto">${c.valor}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="bg-white rounded-2xl border border-sky-200 ring-1 ring-sky-100 p-5">
+                <label className={lc}>Notas del pedido</label>
+                <textarea value={editNotasCliente} onChange={e => setEditNotasCliente(e.target.value)} rows={3} className="w-full px-3 py-2.5 border border-slate-200 rounded-[10px] text-[13px] focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none bg-white" />
               </div>
             </div>
-
-            {campos.length > 0 && (
+          ) : (
+            <div className="lg:col-span-2 space-y-4">
               <div className="bg-white rounded-2xl border border-sky-200 ring-1 ring-sky-100 p-5">
-                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">Opciones adicionales</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {campos.map(campo => (
-                    <div key={campo.id}>
-                      <label className={lc}>
-                        {campo.nombre}
-                        {campo.impactoTipo === 'PORCENTAJE' && <span className="text-slate-300 ml-1 font-normal normal-case tracking-normal">(+{campo.impactoValor}%)</span>}
-                        {campo.impactoTipo === 'FIJO' && <span className="text-slate-300 ml-1 font-normal normal-case tracking-normal">(+${campo.impactoValor})</span>}
-                      </label>
-                      {campo.tipo === 'BOOLEAN' ? (
-                        <select value={editValoresCampos[campo.id] ?? 'false'}
-                          onChange={e => setEditValoresCampos(p => ({ ...p, [campo.id]: e.target.value }))} className={ic}>
-                          <option value="false">No</option>
-                          <option value="true">Sí</option>
-                        </select>
-                      ) : campo.tipo === 'SELECT' ? (
-                        <select value={editValoresCampos[campo.id] ?? ''}
-                          onChange={e => setEditValoresCampos(p => ({ ...p, [campo.id]: e.target.value }))} className={ic}>
-                          <option value="">— Seleccionar —</option>
-                          {campo.opciones.map(o => <option key={o}>{o}</option>)}
-                        </select>
-                      ) : (
-                        <input type="number" value={editValoresCampos[campo.id] ?? ''}
-                          onChange={e => setEditValoresCampos(p => ({ ...p, [campo.id]: e.target.value }))} className={ic} />
-                      )}
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">Especificaciones</p>
+                <div className="grid grid-cols-3 gap-3 mb-3">
+                  <div>
+                    <label className={lc}>Largo (cm)</label>
+                    <input type="number" value={editLargo} onChange={e => setEditLargo(e.target.value)} placeholder="0" min="0" step="0.1" className={ic} />
+                  </div>
+                  <div>
+                    <label className={lc}>Ancho (cm)</label>
+                    <input type="number" value={editAncho} onChange={e => setEditAncho(e.target.value)} placeholder="0" min="0" step="0.1" className={ic} />
+                  </div>
+                  <div>
+                    <label className={lc}>Alto (cm)</label>
+                    <input type="number" value={editAlto} onChange={e => setEditAlto(e.target.value)} placeholder="0" min="0" step="0.1" className={ic} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <label className={lc}>Material</label>
+                    <select value={editMaterialId} onChange={e => setEditMaterialId(e.target.value)} className={ic}>
+                      <option value="">— Sin material —</option>
+                      {materialesActivos.map(m => (
+                        <option key={m.id} value={m.id}>
+                          {m.nombre}{m.precioUnitario > 0 ? ` (+$${m.precioUnitario}/u)` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={lc}>Impresión</label>
+                    <select value={editImpresion} onChange={e => setEditImpresion(e.target.value)} className={ic}>
+                      {IMPRESIONES.map(i => (
+                        <option key={i.value} value={i.value}>{i.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={lc}>Cantidad de unidades</label>
+                    <input type="number" value={editCantidad} onChange={e => setEditCantidad(e.target.value)} min="1" className={ic} />
+                    {editDescuentoPct > 0 && (
+                      <p className="text-[11px] text-emerald-600 mt-1 font-medium">✓ Descuento: -{editDescuentoPct}%</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className={lc}>Entrega estimada</label>
+                    <input type="date" value={editEntregaEst} onChange={e => setEditEntregaEst(e.target.value)} className={ic} />
+                  </div>
+                </div>
+              </div>
+
+              {campos.length > 0 && (
+                <div className="bg-white rounded-2xl border border-sky-200 ring-1 ring-sky-100 p-5">
+                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">Opciones adicionales</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {campos.map(campo => (
+                      <div key={campo.id}>
+                        <label className={lc}>
+                          {campo.nombre}
+                          {campo.impactoTipo === 'PORCENTAJE' && <span className="text-slate-300 ml-1 font-normal normal-case tracking-normal">(+{campo.impactoValor}%)</span>}
+                          {campo.impactoTipo === 'FIJO' && <span className="text-slate-300 ml-1 font-normal normal-case tracking-normal">(+${campo.impactoValor})</span>}
+                        </label>
+                        {campo.tipo === 'BOOLEAN' ? (
+                          <select value={editValoresCampos[campo.id] ?? 'false'}
+                            onChange={e => setEditValoresCampos(p => ({ ...p, [campo.id]: e.target.value }))} className={ic}>
+                            <option value="false">No</option>
+                            <option value="true">Sí</option>
+                          </select>
+                        ) : campo.tipo === 'SELECT' ? (
+                          <select value={editValoresCampos[campo.id] ?? ''}
+                            onChange={e => setEditValoresCampos(p => ({ ...p, [campo.id]: e.target.value }))} className={ic}>
+                            <option value="">— Seleccionar —</option>
+                            {campo.opciones.map(o => <option key={o}>{o}</option>)}
+                          </select>
+                        ) : (
+                          <input type="number" value={editValoresCampos[campo.id] ?? ''}
+                            onChange={e => setEditValoresCampos(p => ({ ...p, [campo.id]: e.target.value }))} className={ic} />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="bg-white rounded-2xl border border-sky-200 ring-1 ring-sky-100 p-5">
+                <label className={lc}>Notas del pedido</label>
+                <textarea value={editNotasCliente} onChange={e => setEditNotasCliente(e.target.value)}
+                  rows={3} placeholder="Colores Pantone, detalles del logo..."
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-[10px] text-[13px] focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none bg-white" />
+              </div>
+            </div>
+          )}
+
+          <div>
+            {isLumapack && lumaResultado ? (
+              <div className="bg-slate-900 rounded-2xl p-5 text-white space-y-3 lg:sticky lg:top-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <Calculator size={14} className="text-sky-400" />
+                  <p className="text-[13px] font-semibold">Cotización en tiempo real</p>
+                </div>
+                <div className="space-y-1.5 text-[13px]">
+                  <div className="flex justify-between"><span className="text-slate-400">Ancho plancha</span><span className="font-mono">{lumaResultado.anchoPlancha.toFixed(1)} mm</span></div>
+                  <div className="flex justify-between"><span className="text-slate-400">Largo plancha</span><span className="font-mono">{lumaResultado.largoPlancha.toFixed(1)} mm</span></div>
+                  <div className="flex justify-between"><span className="text-slate-400">Superficie</span><span className="font-mono">{lumaResultado.superficieM2.toFixed(4)} m²</span></div>
+                </div>
+                <div className="border-t border-white/10 pt-3 space-y-1.5 text-[13px]">
+                  <div className="flex justify-between"><span className="text-slate-400">Costo cartón</span><span className="font-mono">${lumaResultado.costoBase.toLocaleString('es-AR', { maximumFractionDigits: 2 })}</span></div>
+                  {lumaResultado.costosExtra > 0 && <div className="flex justify-between"><span className="text-slate-400">Costos adicionales</span><span className="font-mono">${lumaResultado.costosExtra.toLocaleString('es-AR', { maximumFractionDigits: 2 })}</span></div>}
+                  <div className="flex justify-between font-semibold"><span className="text-slate-300">Costo total</span><span className="font-mono">${lumaResultado.costoTotal.toLocaleString('es-AR', { maximumFractionDigits: 2 })}</span></div>
+                </div>
+                <div className="border-t border-white/10 pt-3 space-y-1.5 text-[13px]">
+                  <div className="flex justify-between"><span className="text-slate-400">Factor margen</span><span>{(lumaFactor * 100).toFixed(0)}%</span></div>
+                  <div className="flex justify-between"><span className="text-slate-400">Precio unitario</span><span className="font-mono text-sky-400 font-semibold">${lumaResultado.precioUnitario.toLocaleString('es-AR', { maximumFractionDigits: 2 })}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-400">Ganancia unitaria</span><span className="font-mono text-emerald-400">${lumaResultado.gananciaUnitaria.toLocaleString('es-AR', { maximumFractionDigits: 2 })}</span></div>
+                </div>
+                <div className="border-t border-white/10 pt-3">
+                  <div className="flex justify-between items-baseline">
+                    <span className="text-[13px] font-semibold text-slate-300">TOTAL</span>
+                    <span className="text-[24px] font-bold text-sky-400 font-mono">${lumaResultado.precioTotal.toLocaleString('es-AR', { maximumFractionDigits: 0 })}</span>
+                  </div>
+                </div>
+                <div className="space-y-2 pt-2">
+                  <button onClick={saveEdit} disabled={mutation.isPending} className="w-full h-10 bg-sky-500 hover:bg-sky-600 text-white rounded-[10px] text-[13px] font-semibold transition-colors disabled:opacity-40">
+                    {mutation.isPending ? 'Guardando...' : 'Guardar cambios'}
+                  </button>
+                  <button onClick={() => setIsEditing(false)} className="w-full h-10 bg-white/10 hover:bg-white/20 text-white rounded-[10px] text-[13px] font-semibold transition-colors">
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            ) : isLumapack ? (
+              <div className="bg-slate-900 rounded-2xl p-5 text-center text-slate-400 text-[13px] lg:sticky lg:top-6">
+                Completá los campos para ver la cotización
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl border border-slate-200 p-5 lg:sticky lg:top-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Calculator size={14} className="text-sky-500" />
+                  <p className="text-[13px] font-semibold text-slate-900">Cotización</p>
+                </div>
+                <div className="mb-5">
+                  <div className="space-y-1.5 mb-3">
+                    {editBreakdown.map((item, i) => (
+                      <div key={i} className="flex justify-between text-[13px]">
+                        <span className={item.delta < 0 ? 'text-emerald-600' : i === 0 ? 'text-slate-500' : 'text-slate-400'}>
+                          {i > 0 && item.delta >= 0 ? '+ ' : ''}{item.label}
+                        </span>
+                        <span className={`font-semibold font-mono ${item.delta < 0 ? 'text-emerald-600' : 'text-slate-700'}`}>
+                          {item.delta < 0 ? '-' : i > 0 ? '+' : ''}${Math.abs(item.delta).toLocaleString('es-AR')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="border-t border-slate-100 pt-2.5 space-y-1.5">
+                    <div className="flex justify-between text-[13px]">
+                      <span className="text-slate-500">Precio unitario</span>
+                      <span className="font-semibold text-slate-900 font-mono">${editPrecioUnitario.toLocaleString('es-AR')}/u</span>
                     </div>
-                  ))}
+                    <div className="text-[13px] text-slate-400 font-mono">× {Number(editCantidad).toLocaleString('es-AR')} u.</div>
+                  </div>
+                  <div className="border-t border-slate-100 mt-2.5 pt-2.5 flex justify-between items-baseline">
+                    <span className="text-[13px] font-semibold text-slate-900">Total estimado</span>
+                    <span className="text-[24px] font-bold text-sky-600 font-mono">${editPrecioTotal.toLocaleString('es-AR')}</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <button onClick={saveEdit} disabled={mutation.isPending}
+                    className="w-full h-10 bg-sky-500 hover:bg-sky-600 text-white rounded-[10px] text-[13px] font-semibold transition-colors disabled:opacity-40 shadow-[0_4px_12px_-4px_rgba(14,165,233,0.45)]">
+                    {mutation.isPending ? 'Guardando...' : 'Guardar cambios'}
+                  </button>
+                  <button onClick={() => setIsEditing(false)}
+                    className="w-full h-10 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-[10px] text-[13px] font-semibold transition-colors">
+                    Cancelar
+                  </button>
                 </div>
               </div>
             )}
-
-            <div className="bg-white rounded-2xl border border-sky-200 ring-1 ring-sky-100 p-5">
-              <label className={lc}>Notas del pedido</label>
-              <textarea value={editNotasCliente} onChange={e => setEditNotasCliente(e.target.value)}
-                rows={3} placeholder="Colores Pantone, detalles del logo..."
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-[10px] text-[13px] focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none bg-white" />
-            </div>
-          </div>
-
-          <div>
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 lg:sticky lg:top-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Calculator size={14} className="text-sky-500" />
-                <p className="text-[13px] font-semibold text-slate-900">Cotización</p>
-              </div>
-              <div className="mb-5">
-                <div className="space-y-1.5 mb-3">
-                  {editBreakdown.map((item, i) => (
-                    <div key={i} className="flex justify-between text-[13px]">
-                      <span className={item.delta < 0 ? 'text-emerald-600' : i === 0 ? 'text-slate-500' : 'text-slate-400'}>
-                        {i > 0 && item.delta >= 0 ? '+ ' : ''}{item.label}
-                      </span>
-                      <span className={`font-semibold font-mono ${item.delta < 0 ? 'text-emerald-600' : 'text-slate-700'}`}>
-                        {item.delta < 0 ? '-' : i > 0 ? '+' : ''}${Math.abs(item.delta).toLocaleString('es-AR')}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <div className="border-t border-slate-100 pt-2.5 space-y-1.5">
-                  <div className="flex justify-between text-[13px]">
-                    <span className="text-slate-500">Precio unitario</span>
-                    <span className="font-semibold text-slate-900 font-mono">${editPrecioUnitario.toLocaleString('es-AR')}/u</span>
-                  </div>
-                  <div className="text-[13px] text-slate-400 font-mono">× {Number(editCantidad).toLocaleString('es-AR')} u.</div>
-                </div>
-                <div className="border-t border-slate-100 mt-2.5 pt-2.5 flex justify-between items-baseline">
-                  <span className="text-[13px] font-semibold text-slate-900">Total estimado</span>
-                  <span className="text-[24px] font-bold text-sky-600 font-mono">${editPrecioTotal.toLocaleString('es-AR')}</span>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <button onClick={saveEdit} disabled={mutation.isPending}
-                  className="w-full h-10 bg-sky-500 hover:bg-sky-600 text-white rounded-[10px] text-[13px] font-semibold transition-colors disabled:opacity-40 shadow-[0_4px_12px_-4px_rgba(14,165,233,0.45)]">
-                  {mutation.isPending ? 'Guardando...' : 'Guardar cambios'}
-                </button>
-                <button onClick={() => setIsEditing(false)}
-                  className="w-full h-10 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-[10px] text-[13px] font-semibold transition-colors">
-                  Cancelar
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       ) : (
