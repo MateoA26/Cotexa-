@@ -426,6 +426,13 @@ export default function DetallePedido() {
 
   useEffect(() => {
     if (!isLumapack || !pedido || !isEditing) return
+
+    console.log('=== LUMA EFFECT ===')
+    console.log('proveedoresMat:', proveedoresMat)
+    console.log('tiposCaja:', tiposCaja)
+    console.log('pedido.notasAdmin:', pedido.notasAdmin)
+    console.log('pedido.material:', pedido.material)
+
     if (proveedoresMat.length === 0 && tiposCaja.length === 0) return
 
     try {
