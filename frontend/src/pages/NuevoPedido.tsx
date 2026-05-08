@@ -192,10 +192,14 @@ export default function NuevoPedido() {
           precioTotal: lumaResult.precioTotal,
           estado,
           notasAdmin: JSON.stringify({
+            lumapack: {
+              tipoCajaId: tipoCajaId,
+              proveedorMatId: proveedorMatId,
+              factor: factorMargen,
+            },
             anchoPlancha: lumaResult.anchoPlancha,
             largoPlancha: lumaResult.largoPlancha,
             superficieM2: lumaResult.superficieM2,
-            factor: factorMargen,
           }),
           valoresCampos: [],
         })
