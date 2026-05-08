@@ -281,7 +281,6 @@ export default function DetallePedido() {
     queryKey: ['pedido', id],
     queryFn: async () => {
       const res = await pedidosApi.getOne(Number(id))
-      setNotasAdmin(res.data.notasAdmin || '')
       return res.data
     }
   })
@@ -302,6 +301,11 @@ export default function DetallePedido() {
     queryFn: () => empresaApi.get().then(r => r.data),
   })
   const isLumapack = empresa?.slug === 'lumapack'
+
+  useEffect(() => {
+    if (!pedido) return
+    setNotasAdmin(isLumapack ? '' : (pedido.notasAdmin || ''))
+  }, [pedido, isLumapack])
 
   const { data: tiposCaja = [] } = useQuery({
     queryKey: ['tipos-caja'],
