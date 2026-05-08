@@ -75,7 +75,7 @@ function calcularLumapack(
 
   const anchoPlancha = evalFormula(tipoCaja.formulaAncho)
   const largoPlancha = evalFormula(tipoCaja.formulaLargo)
-  const superficieM2 = (anchoPlancha * largoPlancha) / 10000
+  const superficieM2 = (anchoPlancha * largoPlancha) / 1000000
   const costoBase = superficieM2 * precioM2 * cantidad
 
   let costosExtra = 0
