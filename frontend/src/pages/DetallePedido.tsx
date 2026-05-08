@@ -443,14 +443,27 @@ export default function DetallePedido() {
       try {
         const datos = JSON.parse(pedido.notasAdmin || '{}')
         setLumaTipoCajaId(datos.lumapack?.tipoCajaId || null)
-        setLumaProveedorMatId(datos.lumapack?.proveedorMatId || null)
         setLumaFactor(datos.lumapack?.factor ?? 0.5)
+
+        // Si no hay proveedorMatId guardado, intentar encontrarlo desde pedido.material
+        if (datos.lumapack?.proveedorMatId) {
+          setLumaProveedorMatId(datos.lumapack.proveedorMatId)
+        } else if (pedido.material) {
+          // pedido.material tiene formato "PROVEEDOR — MATERIAL"
+          const parts = pedido.material.split(' — ')
+          if (parts.length === 2) {
+            const match = proveedoresMat.find((p: any) =>
+              p.proveedor === parts[0] && p.material === parts[1]
+            )
+            if (match) setLumaProveedorMatId(match.id)
+          }
+        }
       } catch {
         setLumaTipoCajaId(null)
         setLumaProveedorMatId(null)
         setLumaFactor(0.5)
       }
-      // Siempre inicializar E/F/G desde el pedido (largo=G, ancho=F, alto=E)
+      // Siempre inicializar E/F/G desde el pedido
       setLumaE(String(pedido.alto || ''))
       setLumaF(String(pedido.ancho || ''))
       setLumaG(String(pedido.largo || ''))
