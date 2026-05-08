@@ -148,7 +148,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
   const {
     clienteId, largo, ancho, alto, material, impresion, materialId,
     cantidad, notasCliente, precioBase, precioTotal,
-    entregaEst, valoresCampos, estado
+    entregaEst, valoresCampos, estado, notasAdmin
   } = req.body
   const count = await prisma.pedido.count({ where: { empresaId: req.user!.empresaId! } })
   const pedido = await prisma.pedido.create({
@@ -165,6 +165,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
       materialId: materialId ? Number(materialId) : null,
       cantidad: cantidad ? Number(cantidad) : null,
       notasCliente: notasCliente || null,
+      notasAdmin: notasAdmin || null,
       precioBase: precioBase ? Number(precioBase) : null,
       precioTotal: precioTotal ? Number(precioTotal) : null,
       entregaEst: entregaEst ? new Date(entregaEst) : null,
