@@ -64,6 +64,9 @@ router.post('/login', async (req: Request, res: Response) => {
 })
 
 router.post('/seed', async (_req: Request, res: Response) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Not found' })
+  }
   try {
     const hashAdmin = await bcrypt.hash('admin123', 10)
     const hashDemo = await bcrypt.hash('demo123', 10)
