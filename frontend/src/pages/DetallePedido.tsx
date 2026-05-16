@@ -277,6 +277,23 @@ export default function DetallePedido() {
   const [lumaFactor, setLumaFactor] = useState(0.5)
   const [lumaCostosSeleccionados, setLumaCostosSeleccionados] = useState<number[]>([])
 
+  const [printBocas, setPrintBocas] = useState('')
+  const [printAnchoCart, setPrintAnchoCart] = useState('')
+  const [printAltoCart, setPrintAltoCart] = useState('')
+  const [printGramaje, setPrintGramaje] = useState('')
+  const [printPrecioPorKilo, setPrintPrecioPorKilo] = useState('')
+  const [printTotalTroquelado, setPrintTotalTroquelado] = useState('')
+  const [printPoli, setPrintPoli] = useState('')
+  const [printRelieve, setPrintRelieve] = useState('')
+  const [printStamping, setPrintStamping] = useState('')
+  const [printDoblado, setPrintDoblado] = useState('')
+  const [printTotalImpresion, setPrintTotalImpresion] = useState('')
+  const [printCajasPorCaja, setPrintCajasPorCaja] = useState('')
+  const [printPrecioPorCaja, setPrintPrecioPorCaja] = useState('')
+  const [printTotalFlete, setPrintTotalFlete] = useState('')
+  const [printMargen, setPrintMargen] = useState('30')
+  const [printDescripcion, setPrintDescripcion] = useState('')
+
   const { data: pedido, isLoading } = useQuery<Pedido>({
     queryKey: ['pedido', id],
     queryFn: async () => {
@@ -301,6 +318,7 @@ export default function DetallePedido() {
     queryFn: () => empresaApi.get().then(r => r.data),
   })
   const isLumapack = empresa?.slug === 'lumapack'
+  const isPrintpack = empresa?.slug === 'printpack'
 
   useEffect(() => {
     if (!pedido) return
@@ -428,6 +446,88 @@ export default function DetallePedido() {
     } catch { return null }
   }, [isLumapack, pedido, tiposCaja, proveedoresMat])
 
+  const printResultado = useMemo(() => {
+    if (!isPrintpack) return null
+    const unidades = Number(editCantidad)
+    const bocas = Number(printBocas)
+    const anchoCart = Number(printAnchoCart)
+    const altoCart = Number(printAltoCart)
+    const gramaje = Number(printGramaje)
+    const precioPorKilo = Number(printPrecioPorKilo)
+    const totalTroquelado = Number(printTotalTroquelado)
+    const poli = Number(printPoli)
+    const relieve = Number(printRelieve)
+    const stamping = Number(printStamping)
+    const doblado = Number(printDoblado)
+    const totalImpresion = Number(printTotalImpresion)
+    const cajasPorCaja = Number(printCajasPorCaja)
+    const precioPorCaja = Number(printPrecioPorCaja)
+    const totalFlete = Number(printTotalFlete)
+    const margen = Number(printMargen)
+
+    if (!unidades || !bocas || !anchoCart || !altoCart || !gramaje || !precioPorKilo) return null
+
+    const cantPliegos = unidades / bocas
+    const kilos500 = (anchoCart * altoCart * gramaje) / 20000
+    const kilos1000 = kilos500 * 2
+    const merma = kilos1000 * 0.10
+    const kilosTotales = ((cantPliegos * kilos1000) / 1000) + merma
+
+    const costoCartulinaUnit = (kilosTotales * precioPorKilo) / unidades
+    const troqueladoUnit = totalTroquelado / unidades
+    const poliUnit = poli / unidades
+    const relieveUnit = relieve / unidades
+    const stampingUnit = stamping / unidades
+    const dobladoUnit = doblado / unidades
+    const impresionUnit = totalImpresion / unidades
+    const cajasTotales = cajasPorCaja > 0 ? unidades / cajasPorCaja : 0
+    const unitarioCajas = cajasTotales > 0 ? (cajasTotales * precioPorCaja) / unidades : 0
+    const fleteUnit = totalFlete / unidades
+
+    const costoTotal = costoCartulinaUnit + troqueladoUnit + poliUnit + relieveUnit + stampingUnit + dobladoUnit + impresionUnit + unitarioCajas + fleteUnit
+    const precioFinal = margen > 0 && margen < 100 ? costoTotal / (1 - margen / 100) : costoTotal
+    const precioTotal = precioFinal * unidades
+
+    return { cantPliegos, kilosTotales, costoCartulinaUnit, troqueladoUnit, poliUnit, relieveUnit, stampingUnit, dobladoUnit, impresionUnit, unitarioCajas, fleteUnit, costoTotal, precioFinal, precioTotal }
+  }, [isPrintpack, editCantidad, printBocas, printAnchoCart, printAltoCart, printGramaje, printPrecioPorKilo,
+      printTotalTroquelado, printPoli, printRelieve, printStamping, printDoblado, printTotalImpresion,
+      printCajasPorCaja, printPrecioPorCaja, printTotalFlete, printMargen])
+
+  const printDetalle = useMemo(() => {
+    if (!isPrintpack || !pedido) return null
+    try {
+      const datos = JSON.parse(pedido.notasAdmin || '{}')
+      const pp = datos.printpack
+      if (!pp) return null
+      const unidades = pedido.cantidad || 0
+      if (!unidades || !pp.bocas || !pp.anchoCart || !pp.altoCart || !pp.gramaje || !pp.precioPorKilo) return null
+
+      const cantPliegos = unidades / pp.bocas
+      const kilos500 = (pp.anchoCart * pp.altoCart * pp.gramaje) / 20000
+      const kilos1000 = kilos500 * 2
+      const merma = kilos1000 * 0.10
+      const kilosTotales = ((cantPliegos * kilos1000) / 1000) + merma
+
+      const costoCartulinaUnit = (kilosTotales * pp.precioPorKilo) / unidades
+      const troqueladoUnit = (pp.totalTroquelado || 0) / unidades
+      const poliUnit = (pp.poli || 0) / unidades
+      const relieveUnit = (pp.relieve || 0) / unidades
+      const stampingUnit = (pp.stamping || 0) / unidades
+      const dobladoUnit = (pp.doblado || 0) / unidades
+      const impresionUnit = (pp.totalImpresion || 0) / unidades
+      const cajasTotales = pp.cajasPorCaja > 0 ? unidades / pp.cajasPorCaja : 0
+      const unitarioCajas = cajasTotales > 0 ? (cajasTotales * (pp.precioPorCaja || 0)) / unidades : 0
+      const fleteUnit = (pp.totalFlete || 0) / unidades
+
+      const costoTotal = costoCartulinaUnit + troqueladoUnit + poliUnit + relieveUnit + stampingUnit + dobladoUnit + impresionUnit + unitarioCajas + fleteUnit
+      const margen = pp.margen || 0
+      const precioFinal = margen > 0 && margen < 100 ? costoTotal / (1 - margen / 100) : costoTotal
+      const precioTotal = precioFinal * unidades
+
+      return { costoCartulinaUnit, troqueladoUnit, poliUnit, relieveUnit, stampingUnit, dobladoUnit, impresionUnit, unitarioCajas, fleteUnit, costoTotal, precioFinal, precioTotal, margen }
+    } catch { return null }
+  }, [isPrintpack, pedido])
+
   useEffect(() => {
     if (!isLumapack || !pedido || !isEditing) return
 
@@ -470,6 +570,31 @@ export default function DetallePedido() {
     setLumaG(String(pedido.largo || ''))
   }, [isLumapack, isEditing, pedido, proveedoresMat, tiposCaja])
 
+  useEffect(() => {
+    if (!isPrintpack || !pedido || !isEditing) return
+    try {
+      const datos = JSON.parse(pedido.notasAdmin || '{}')
+      const pp = datos.printpack
+      if (!pp) return
+      setPrintBocas(String(pp.bocas ?? ''))
+      setPrintAnchoCart(String(pp.anchoCart ?? ''))
+      setPrintAltoCart(String(pp.altoCart ?? ''))
+      setPrintGramaje(String(pp.gramaje ?? ''))
+      setPrintPrecioPorKilo(String(pp.precioPorKilo ?? ''))
+      setPrintTotalTroquelado(String(pp.totalTroquelado ?? ''))
+      setPrintPoli(String(pp.poli ?? ''))
+      setPrintRelieve(String(pp.relieve ?? ''))
+      setPrintStamping(String(pp.stamping ?? ''))
+      setPrintDoblado(String(pp.doblado ?? ''))
+      setPrintTotalImpresion(String(pp.totalImpresion ?? ''))
+      setPrintCajasPorCaja(String(pp.cajasPorCaja ?? ''))
+      setPrintPrecioPorCaja(String(pp.precioPorCaja ?? ''))
+      setPrintTotalFlete(String(pp.totalFlete ?? ''))
+      setPrintMargen(String(pp.margen ?? '30'))
+      setPrintDescripcion(pp.descripcion ?? '')
+    } catch { /* silently fail */ }
+  }, [isPrintpack, isEditing, pedido])
+
   const startEditing = () => {
     if (!pedido) return
     setEditLargo(pedido.largo?.toString() ?? '')
@@ -485,6 +610,30 @@ export default function DetallePedido() {
     pedido.valoresCampos?.forEach(v => { vc[v.campoId] = v.valor })
     setEditValoresCampos(vc)
     setIsEditing(true)
+    if (isPrintpack) {
+      try {
+        const datos = JSON.parse(pedido.notasAdmin || '{}')
+        const pp = datos.printpack
+        if (pp) {
+          setPrintBocas(String(pp.bocas ?? ''))
+          setPrintAnchoCart(String(pp.anchoCart ?? ''))
+          setPrintAltoCart(String(pp.altoCart ?? ''))
+          setPrintGramaje(String(pp.gramaje ?? ''))
+          setPrintPrecioPorKilo(String(pp.precioPorKilo ?? ''))
+          setPrintTotalTroquelado(String(pp.totalTroquelado ?? ''))
+          setPrintPoli(String(pp.poli ?? ''))
+          setPrintRelieve(String(pp.relieve ?? ''))
+          setPrintStamping(String(pp.stamping ?? ''))
+          setPrintDoblado(String(pp.doblado ?? ''))
+          setPrintTotalImpresion(String(pp.totalImpresion ?? ''))
+          setPrintCajasPorCaja(String(pp.cajasPorCaja ?? ''))
+          setPrintPrecioPorCaja(String(pp.precioPorCaja ?? ''))
+          setPrintTotalFlete(String(pp.totalFlete ?? ''))
+          setPrintMargen(String(pp.margen ?? '30'))
+          setPrintDescripcion(pp.descripcion ?? '')
+        }
+      } catch { /* silently fail */ }
+    }
     if (isLumapack) {
       setLumaE(String(pedido.alto || ''))
       setLumaF(String(pedido.ancho || ''))
@@ -502,6 +651,42 @@ export default function DetallePedido() {
 
   const saveEdit = async () => {
     if (!pedido) return
+    if (isPrintpack && printResultado) {
+      const notasAdminActual = (() => {
+        try { return JSON.parse(pedido.notasAdmin || '{}') } catch { return {} }
+      })()
+      const notasAdminNuevo = JSON.stringify({
+        ...notasAdminActual,
+        printpack: {
+          bocas: Number(printBocas),
+          anchoCart: Number(printAnchoCart),
+          altoCart: Number(printAltoCart),
+          gramaje: Number(printGramaje),
+          precioPorKilo: Number(printPrecioPorKilo),
+          totalTroquelado: Number(printTotalTroquelado),
+          poli: Number(printPoli),
+          relieve: Number(printRelieve),
+          stamping: Number(printStamping),
+          doblado: Number(printDoblado),
+          totalImpresion: Number(printTotalImpresion),
+          cajasPorCaja: Number(printCajasPorCaja),
+          precioPorCaja: Number(printPrecioPorCaja),
+          totalFlete: Number(printTotalFlete),
+          margen: Number(printMargen),
+          descripcion: printDescripcion,
+        }
+      })
+      await mutation.mutateAsync({
+        cantidad: Number(editCantidad),
+        entregaEst: editEntregaEst || null,
+        notasCliente: editNotasCliente,
+        precioBase: Math.round(printResultado.costoTotal * Number(editCantidad)),
+        precioTotal: Math.round(printResultado.precioTotal),
+        notasAdmin: notasAdminNuevo,
+      })
+      setIsEditing(false)
+      return
+    }
     if (isLumapack && lumaResultado) {
       const provMat = proveedoresMat.find((p: any) => p.id === lumaProveedorMatId)
       // Preservar notas internas existentes y agregar datos lumapack
@@ -653,7 +838,69 @@ export default function DetallePedido() {
       {/* Edit mode */}
       {isEditing ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
-          {isLumapack ? (
+          {isPrintpack ? (
+            <div className="lg:col-span-2 space-y-4">
+              <div className="bg-white rounded-2xl border border-sky-200 ring-1 ring-sky-100 p-5">
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">Cartulina</p>
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div><label className={lc}>Bocas</label><input type="number" value={printBocas} onChange={e => setPrintBocas(e.target.value)} placeholder="0" className={ic} /></div>
+                  <div><label className={lc}>Gramaje (g/m²)</label><input type="number" value={printGramaje} onChange={e => setPrintGramaje(e.target.value)} placeholder="0" className={ic} /></div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div><label className={lc}>Ancho (mm)</label><input type="number" value={printAnchoCart} onChange={e => setPrintAnchoCart(e.target.value)} placeholder="0" className={ic} /></div>
+                  <div><label className={lc}>Alto (mm)</label><input type="number" value={printAltoCart} onChange={e => setPrintAltoCart(e.target.value)} placeholder="0" className={ic} /></div>
+                  <div><label className={lc}>Precio por kg ($)</label><input type="number" value={printPrecioPorKilo} onChange={e => setPrintPrecioPorKilo(e.target.value)} placeholder="0" className={ic} /></div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-sky-200 ring-1 ring-sky-100 p-5">
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">Troquelado e impresión</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><label className={lc}>Total troquelado ($)</label><input type="number" value={printTotalTroquelado} onChange={e => setPrintTotalTroquelado(e.target.value)} placeholder="0" className={ic} /></div>
+                  <div><label className={lc}>Total impresión ($)</label><input type="number" value={printTotalImpresion} onChange={e => setPrintTotalImpresion(e.target.value)} placeholder="0" className={ic} /></div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-sky-200 ring-1 ring-sky-100 p-5">
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">Terminaciones</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><label className={lc}>Polipropileno ($)</label><input type="number" value={printPoli} onChange={e => setPrintPoli(e.target.value)} placeholder="0" className={ic} /></div>
+                  <div><label className={lc}>Relieve ($)</label><input type="number" value={printRelieve} onChange={e => setPrintRelieve(e.target.value)} placeholder="0" className={ic} /></div>
+                  <div><label className={lc}>Stamping ($)</label><input type="number" value={printStamping} onChange={e => setPrintStamping(e.target.value)} placeholder="0" className={ic} /></div>
+                  <div><label className={lc}>Doblado ($)</label><input type="number" value={printDoblado} onChange={e => setPrintDoblado(e.target.value)} placeholder="0" className={ic} /></div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-sky-200 ring-1 ring-sky-100 p-5">
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">Packaging y flete</p>
+                <div className="grid grid-cols-3 gap-3">
+                  <div><label className={lc}>Cajas por caja</label><input type="number" value={printCajasPorCaja} onChange={e => setPrintCajasPorCaja(e.target.value)} placeholder="0" className={ic} /></div>
+                  <div><label className={lc}>Precio por caja ($)</label><input type="number" value={printPrecioPorCaja} onChange={e => setPrintPrecioPorCaja(e.target.value)} placeholder="0" className={ic} /></div>
+                  <div><label className={lc}>Total flete ($)</label><input type="number" value={printTotalFlete} onChange={e => setPrintTotalFlete(e.target.value)} placeholder="0" className={ic} /></div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-sky-200 ring-1 ring-sky-100 p-5">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><label className={lc}>Cantidad</label><input type="number" value={editCantidad} onChange={e => setEditCantidad(e.target.value)} min="1" className={ic} /></div>
+                  <div><label className={lc}>Entrega estimada</label><input type="date" value={editEntregaEst} onChange={e => setEditEntregaEst(e.target.value)} className={ic} /></div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-sky-200 ring-1 ring-sky-100 p-5">
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-3">Margen de ganancia</p>
+                <div className="flex items-center gap-4">
+                  <input type="range" min={0} max={80} step={1} value={printMargen} onChange={e => setPrintMargen(e.target.value)} className="flex-1 accent-sky-500" />
+                  <span className="text-[15px] font-bold text-sky-600 w-12 text-right">{printMargen}%</span>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-sky-200 ring-1 ring-sky-100 p-5">
+                <label className={lc}>Notas del pedido</label>
+                <textarea value={editNotasCliente} onChange={e => setEditNotasCliente(e.target.value)} rows={3} className="w-full px-3 py-2.5 border border-slate-200 rounded-[10px] text-[13px] focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none bg-white" />
+              </div>
+            </div>
+          ) : isLumapack ? (
             <div className="lg:col-span-2 space-y-4">
               <div className="bg-white rounded-2xl border border-sky-200 ring-1 ring-sky-100 p-5">
                 <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">Caja</p>
@@ -814,7 +1061,48 @@ export default function DetallePedido() {
           )}
 
           <div>
-            {isLumapack && lumaResultado ? (
+            {isPrintpack && printResultado ? (
+              <div className="bg-slate-900 rounded-2xl p-5 text-white space-y-3 lg:sticky lg:top-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <Calculator size={14} className="text-sky-400" />
+                  <p className="text-[13px] font-semibold">Cotización en tiempo real</p>
+                </div>
+                <div className="space-y-1.5 text-[13px]">
+                  <div className="flex justify-between"><span className="text-slate-400">Cartulina/u</span><span className="font-mono">${printResultado.costoCartulinaUnit.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span></div>
+                  {printResultado.troqueladoUnit > 0 && <div className="flex justify-between"><span className="text-slate-400">Troquelado/u</span><span className="font-mono">${printResultado.troqueladoUnit.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span></div>}
+                  {printResultado.impresionUnit > 0 && <div className="flex justify-between"><span className="text-slate-400">Impresión/u</span><span className="font-mono">${printResultado.impresionUnit.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span></div>}
+                  {printResultado.poliUnit > 0 && <div className="flex justify-between"><span className="text-slate-400">Polipropileno/u</span><span className="font-mono">${printResultado.poliUnit.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span></div>}
+                  {printResultado.relieveUnit > 0 && <div className="flex justify-between"><span className="text-slate-400">Relieve/u</span><span className="font-mono">${printResultado.relieveUnit.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span></div>}
+                  {printResultado.stampingUnit > 0 && <div className="flex justify-between"><span className="text-slate-400">Stamping/u</span><span className="font-mono">${printResultado.stampingUnit.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span></div>}
+                  {printResultado.dobladoUnit > 0 && <div className="flex justify-between"><span className="text-slate-400">Doblado/u</span><span className="font-mono">${printResultado.dobladoUnit.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span></div>}
+                  {printResultado.unitarioCajas > 0 && <div className="flex justify-between"><span className="text-slate-400">Packaging/u</span><span className="font-mono">${printResultado.unitarioCajas.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span></div>}
+                  {printResultado.fleteUnit > 0 && <div className="flex justify-between"><span className="text-slate-400">Flete/u</span><span className="font-mono">${printResultado.fleteUnit.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span></div>}
+                </div>
+                <div className="border-t border-white/10 pt-3 space-y-1.5 text-[13px]">
+                  <div className="flex justify-between font-semibold"><span className="text-slate-300">Costo unitario</span><span className="font-mono">${printResultado.costoTotal.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-400">Margen</span><span>{printMargen}%</span></div>
+                  <div className="flex justify-between"><span className="text-slate-400">Precio unitario</span><span className="font-mono text-sky-400 font-semibold">${printResultado.precioFinal.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span></div>
+                </div>
+                <div className="border-t border-white/10 pt-3">
+                  <div className="flex justify-between items-baseline">
+                    <span className="text-[13px] font-semibold text-slate-300">TOTAL</span>
+                    <span className="text-[24px] font-bold text-sky-400 font-mono">${printResultado.precioTotal.toLocaleString('es-AR', { maximumFractionDigits: 0 })}</span>
+                  </div>
+                </div>
+                <div className="space-y-2 pt-2">
+                  <button onClick={saveEdit} disabled={mutation.isPending} className="w-full h-10 bg-sky-500 hover:bg-sky-600 text-white rounded-[10px] text-[13px] font-semibold transition-colors disabled:opacity-40">
+                    {mutation.isPending ? 'Guardando...' : 'Guardar cambios'}
+                  </button>
+                  <button onClick={() => setIsEditing(false)} className="w-full h-10 bg-white/10 hover:bg-white/20 text-white rounded-[10px] text-[13px] font-semibold transition-colors">
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            ) : isPrintpack ? (
+              <div className="bg-slate-900 rounded-2xl p-5 text-center text-slate-400 text-[13px] lg:sticky lg:top-6">
+                Completá los campos de cartulina para ver la cotización
+              </div>
+            ) : isLumapack && lumaResultado ? (
               <div className="bg-slate-900 rounded-2xl p-5 text-white space-y-3 lg:sticky lg:top-6">
                 <div className="flex items-center gap-2 mb-2">
                   <Calculator size={14} className="text-sky-400" />
@@ -916,7 +1204,19 @@ export default function DetallePedido() {
             <div className="bg-white rounded-2xl border border-slate-200 p-5">
               <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">Especificaciones</p>
               <div className="space-y-2.5">
-                {isLumapack ? (
+                {isPrintpack ? (
+                  <>
+                    {[
+                      ['Cantidad', pedido.cantidad != null ? `${pedido.cantidad.toLocaleString('es-AR')} u.` : null],
+                      ['Entrega', pedido.entregaEst ? new Date(pedido.entregaEst).toLocaleDateString('es-AR') : null],
+                    ].filter(([, v]) => v).map(([label, value]) => (
+                      <div key={label as string} className="flex justify-between text-[13px]">
+                        <span className="text-slate-400">{label}</span>
+                        <span className="font-medium text-slate-900">{value}</span>
+                      </div>
+                    ))}
+                  </>
+                ) : isLumapack ? (
                   <>
                     {[
                       ['Tipo de caja', lumaDetalle?.tipoCaja?.nombre ?? null],
@@ -997,6 +1297,80 @@ export default function DetallePedido() {
                   <div className="flex justify-between text-[13px]">
                     <span className="text-slate-400">Ganancia unitaria</span>
                     <span className="font-mono font-medium text-emerald-600">${lumaDetalle.gananciaUnitaria.toLocaleString('es-AR', { maximumFractionDigits: 2 })}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {isPrintpack && printDetalle && (
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-4">
+              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">Costos PrintPack</p>
+              <div className="space-y-2.5">
+                <div className="flex justify-between text-[13px]">
+                  <span className="text-slate-400">Costo cartulina/u</span>
+                  <span className="font-mono font-medium text-slate-900">${printDetalle.costoCartulinaUnit.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span>
+                </div>
+                {printDetalle.troqueladoUnit > 0 && (
+                  <div className="flex justify-between text-[13px]">
+                    <span className="text-slate-400">Troquelado/u</span>
+                    <span className="font-mono font-medium text-slate-900">${printDetalle.troqueladoUnit.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span>
+                  </div>
+                )}
+                {printDetalle.impresionUnit > 0 && (
+                  <div className="flex justify-between text-[13px]">
+                    <span className="text-slate-400">Impresión/u</span>
+                    <span className="font-mono font-medium text-slate-900">${printDetalle.impresionUnit.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span>
+                  </div>
+                )}
+                {printDetalle.poliUnit > 0 && (
+                  <div className="flex justify-between text-[13px]">
+                    <span className="text-slate-400">Polipropileno/u</span>
+                    <span className="font-mono font-medium text-slate-900">${printDetalle.poliUnit.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span>
+                  </div>
+                )}
+                {printDetalle.relieveUnit > 0 && (
+                  <div className="flex justify-between text-[13px]">
+                    <span className="text-slate-400">Relieve/u</span>
+                    <span className="font-mono font-medium text-slate-900">${printDetalle.relieveUnit.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span>
+                  </div>
+                )}
+                {printDetalle.stampingUnit > 0 && (
+                  <div className="flex justify-between text-[13px]">
+                    <span className="text-slate-400">Stamping/u</span>
+                    <span className="font-mono font-medium text-slate-900">${printDetalle.stampingUnit.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span>
+                  </div>
+                )}
+                {printDetalle.dobladoUnit > 0 && (
+                  <div className="flex justify-between text-[13px]">
+                    <span className="text-slate-400">Doblado/u</span>
+                    <span className="font-mono font-medium text-slate-900">${printDetalle.dobladoUnit.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span>
+                  </div>
+                )}
+                {printDetalle.unitarioCajas > 0 && (
+                  <div className="flex justify-between text-[13px]">
+                    <span className="text-slate-400">Packaging/u</span>
+                    <span className="font-mono font-medium text-slate-900">${printDetalle.unitarioCajas.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span>
+                  </div>
+                )}
+                {printDetalle.fleteUnit > 0 && (
+                  <div className="flex justify-between text-[13px]">
+                    <span className="text-slate-400">Flete/u</span>
+                    <span className="font-mono font-medium text-slate-900">${printDetalle.fleteUnit.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span>
+                  </div>
+                )}
+                <div className="border-t border-slate-100 pt-2.5 mt-2.5 space-y-1.5">
+                  <div className="flex justify-between text-[13px]">
+                    <span className="text-slate-400">Costo unitario</span>
+                    <span className="font-mono font-medium text-slate-900">${printDetalle.costoTotal.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span>
+                  </div>
+                  <div className="flex justify-between text-[13px]">
+                    <span className="text-slate-400">Margen</span>
+                    <span className="font-medium text-slate-900">{printDetalle.margen}%</span>
+                  </div>
+                  <div className="flex justify-between text-[13px]">
+                    <span className="text-slate-400">Precio unitario</span>
+                    <span className="font-mono font-semibold text-sky-600">${printDetalle.precioFinal.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span>
                   </div>
                 </div>
               </div>
