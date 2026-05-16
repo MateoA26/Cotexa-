@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import api, { clientesApi, pedidosApi, camposApi, preciosApi, empresaApi } from '../services/api'
@@ -120,11 +120,28 @@ export default function NuevoPedido() {
   const [factorMargen, setFactorMargen] = useState(0.5)
   const [costosSeleccionados, setCostosSeleccionados] = useState<number[]>([])
 
+  const [printBocas, setPrintBocas] = useState('1')
+  const [printAnchoCart, setPrintAnchoCart] = useState('')
+  const [printAltoCart, setPrintAltoCart] = useState('')
+  const [printGramaje, setPrintGramaje] = useState('')
+  const [printPrecioPorKilo, setPrintPrecioPorKilo] = useState('')
+  const [printTotalTroquelado, setPrintTotalTroquelado] = useState('')
+  const [printPoli, setPrintPoli] = useState('0')
+  const [printRelieve, setPrintRelieve] = useState('0')
+  const [printStamping, setPrintStamping] = useState('0')
+  const [printTotalImpresion, setPrintTotalImpresion] = useState('')
+  const [printUnitarioDoblado, setPrintUnitarioDoblado] = useState('0')
+  const [printCajasPorCaja, setPrintCajasPorCaja] = useState('')
+  const [printPrecioPorCaja, setPrintPrecioPorCaja] = useState('')
+  const [printTotalFlete, setPrintTotalFlete] = useState('')
+  const [printMargen, setPrintMargen] = useState('33')
+
   const { data: empresa } = useQuery({
     queryKey: ['empresa'],
     queryFn: () => empresaApi.get().then(r => r.data),
   })
   const isLumapack = empresa?.slug === 'lumapack'
+  const isPrintpack = empresa?.slug === 'printpack'
 
   const { data: clientes = [] } = useQuery<Cliente[]>({
     queryKey: ['clientes'],
@@ -175,8 +192,86 @@ export default function NuevoPedido() {
     activeCostos
   )
 
+  const printResultado = useMemo(() => {
+    const u = Number(cantidad)
+    if (u === 0) return null
+    const bocas = Number(printBocas)
+    const anchoCart = Number(printAnchoCart)
+    const altoCart = Number(printAltoCart)
+    const gramaje = Number(printGramaje)
+    const precioPorKilo = Number(printPrecioPorKilo)
+    const totalTroquelado = Number(printTotalTroquelado)
+    const poli = Number(printPoli)
+    const relieve = Number(printRelieve)
+    const stamping = Number(printStamping)
+    const totalImpresion = Number(printTotalImpresion)
+    const cajasPorCaja = Number(printCajasPorCaja)
+    const precioPorCaja = Number(printPrecioPorCaja)
+    const totalFlete = Number(printTotalFlete)
+
+    const cantPliegos = u / bocas
+    const kilos500 = (anchoCart * altoCart * gramaje) / 20000
+    const kilos1000 = kilos500 * 2
+    const merma = kilos1000 * 0.10
+    const kilosTotales = ((cantPliegos * kilos1000) / 1000) + merma
+    const costoCartulinaUnit = (kilosTotales * precioPorKilo) / u
+    const troqueladoUnit = totalTroquelado / u
+    const poliUnit = poli / u
+    const relieveUnit = relieve / u
+    const stampingUnit = stamping / u
+    const impresionUnit = totalImpresion / u
+    const cajasTotales = u / cajasPorCaja
+    const unitarioCajas = (cajasTotales * precioPorCaja) / u
+    const fleteUnit = totalFlete / u
+    const unitarioDoblado = Number(printUnitarioDoblado)
+    const costoTotal = costoCartulinaUnit + troqueladoUnit + poliUnit + relieveUnit + stampingUnit + impresionUnit + unitarioCajas + fleteUnit + unitarioDoblado
+    const margenDec = Number(printMargen) / 100
+    const precioFinal = costoTotal / (1 - margenDec)
+    const precioTotal = precioFinal * u
+
+    return {
+      cantPliegos, kilosTotales,
+      costoCartulinaUnit, costoCartulinaTotal: costoCartulinaUnit * u,
+      troqueladoUnit, poliUnit, relieveUnit, stampingUnit, impresionUnit,
+      unitarioCajas, fleteUnit, unitarioDoblado,
+      costoTotal, precioFinal, precioTotal,
+    }
+  }, [cantidad, printBocas, printAnchoCart, printAltoCart, printGramaje, printPrecioPorKilo, printTotalTroquelado, printPoli, printRelieve, printStamping, printTotalImpresion, printUnitarioDoblado, printCajasPorCaja, printPrecioPorCaja, printTotalFlete, printMargen])
+
   const mutation = useMutation({
     mutationFn: (estado: string) => {
+      if (isPrintpack && printResultado) {
+        return pedidosApi.create({
+          clienteId: Number(clienteId),
+          cantidad: Number(cantidad),
+          notasCliente: notasCliente || null,
+          entregaEst: entregaEst || null,
+          precioBase: printResultado.costoTotal * Number(cantidad),
+          precioTotal: printResultado.precioTotal,
+          estado,
+          notasAdmin: JSON.stringify({
+            printpack: {
+              bocas: Number(printBocas),
+              anchoCart: Number(printAnchoCart),
+              altoCart: Number(printAltoCart),
+              gramaje: Number(printGramaje),
+              precioPorKilo: Number(printPrecioPorKilo),
+              totalTroquelado: Number(printTotalTroquelado),
+              poli: Number(printPoli),
+              relieve: Number(printRelieve),
+              stamping: Number(printStamping),
+              totalImpresion: Number(printTotalImpresion),
+              unitarioDoblado: Number(printUnitarioDoblado),
+              cajasPorCaja: Number(printCajasPorCaja),
+              precioPorCaja: Number(printPrecioPorCaja),
+              totalFlete: Number(printTotalFlete),
+              margen: Number(printMargen),
+            }
+          }),
+          valoresCampos: [],
+          largo: null, ancho: null, alto: null, material: null, materialId: null,
+        })
+      }
       if (isLumapack && lumaResult) {
         return pedidosApi.create({
           clienteId: Number(clienteId),
@@ -237,7 +332,7 @@ export default function NuevoPedido() {
     setBreakdown(result.breakdown)
   }, [isLumapack, cantidad, materialId, valoresCampos, campos, precioConfig, materiales, tramos, selectedMaterial])
 
-  const canSubmit = !!clienteId && !mutation.isPending && (!isLumapack || !!lumaResult)
+  const canSubmit = !!clienteId && !mutation.isPending && (!isLumapack || !!lumaResult) && (!isPrintpack || !!printResultado)
 
   const clienteSection = (
     <div className="bg-white rounded-2xl border border-slate-200">
@@ -291,7 +386,151 @@ export default function NuevoPedido() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
 
         <div className="lg:col-span-7 space-y-5">
-          {isLumapack ? (
+          {isPrintpack ? (
+            <>
+              {clienteSection}
+
+              {/* Datos generales */}
+              <div className="bg-white rounded-2xl border border-slate-200">
+                <div className="px-5 py-4 border-b border-slate-100">
+                  <p className="text-sm font-semibold text-slate-900 tracking-tight">Datos generales</p>
+                </div>
+                <div className="p-5">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className={lc}>Cantidad</label>
+                      <input type="number" value={cantidad} onChange={e => setCantidad(e.target.value)} min="1" className={ic} />
+                    </div>
+                    <div>
+                      <label className={lc}>Bocas</label>
+                      <input type="number" value={printBocas} onChange={e => setPrintBocas(e.target.value)} min="1" className={ic} />
+                    </div>
+                    <div>
+                      <label className={lc}>Entrega estimada</label>
+                      <input type="date" value={entregaEst} onChange={e => setEntregaEst(e.target.value)} className={ic} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cartulina IDL */}
+              <div className="bg-white rounded-2xl border border-yellow-200 ring-1 ring-yellow-50">
+                <div className="px-5 py-4 border-b border-yellow-100">
+                  <p className="text-sm font-semibold text-slate-900 tracking-tight">Cartulina IDL</p>
+                </div>
+                <div className="p-5">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className={lc}>Ancho <span className="normal-case font-normal tracking-normal text-slate-400">mm</span></label>
+                      <input type="number" value={printAnchoCart} onChange={e => setPrintAnchoCart(e.target.value)} placeholder="0" min="0" className={ic} />
+                    </div>
+                    <div>
+                      <label className={lc}>Alto <span className="normal-case font-normal tracking-normal text-slate-400">mm</span></label>
+                      <input type="number" value={printAltoCart} onChange={e => setPrintAltoCart(e.target.value)} placeholder="0" min="0" className={ic} />
+                    </div>
+                    <div>
+                      <label className={lc}>Gramaje <span className="normal-case font-normal tracking-normal text-slate-400">g/m²</span></label>
+                      <input type="number" value={printGramaje} onChange={e => setPrintGramaje(e.target.value)} placeholder="0" min="0" className={ic} />
+                    </div>
+                    <div>
+                      <label className={lc}>Precio por kilo <span className="normal-case font-normal tracking-normal text-slate-400">$/kg</span></label>
+                      <input type="number" value={printPrecioPorKilo} onChange={e => setPrintPrecioPorKilo(e.target.value)} placeholder="0" min="0" className={ic} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Troquelado */}
+              <div className="bg-white rounded-2xl border border-green-200 ring-1 ring-green-50">
+                <div className="px-5 py-4 border-b border-green-100">
+                  <p className="text-sm font-semibold text-slate-900 tracking-tight">Troquelado</p>
+                </div>
+                <div className="p-5">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className={lc}>Total troquelado <span className="normal-case font-normal tracking-normal text-slate-400">$</span></label>
+                      <input type="number" value={printTotalTroquelado} onChange={e => setPrintTotalTroquelado(e.target.value)} placeholder="0" min="0" className={ic} />
+                    </div>
+                    <div>
+                      <label className={lc}>Poli <span className="normal-case font-normal tracking-normal text-slate-400">$</span></label>
+                      <input type="number" value={printPoli} onChange={e => setPrintPoli(e.target.value)} placeholder="0" min="0" className={ic} />
+                    </div>
+                    <div>
+                      <label className={lc}>Relieve <span className="normal-case font-normal tracking-normal text-slate-400">$</span></label>
+                      <input type="number" value={printRelieve} onChange={e => setPrintRelieve(e.target.value)} placeholder="0" min="0" className={ic} />
+                    </div>
+                    <div>
+                      <label className={lc}>Stamping <span className="normal-case font-normal tracking-normal text-slate-400">$</span></label>
+                      <input type="number" value={printStamping} onChange={e => setPrintStamping(e.target.value)} placeholder="0" min="0" className={ic} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Impresión */}
+              <div className="bg-white rounded-2xl border border-sky-200 ring-1 ring-sky-50">
+                <div className="px-5 py-4 border-b border-sky-100">
+                  <p className="text-sm font-semibold text-slate-900 tracking-tight">Impresión</p>
+                </div>
+                <div className="p-5">
+                  <label className={lc}>Total impresión <span className="normal-case font-normal tracking-normal text-slate-400">$</span></label>
+                  <input type="number" value={printTotalImpresion} onChange={e => setPrintTotalImpresion(e.target.value)} placeholder="0" min="0" className={ic} />
+                </div>
+              </div>
+
+              {/* Doblado + Pegado */}
+              <div className="bg-white rounded-2xl border border-pink-200 ring-1 ring-pink-50">
+                <div className="px-5 py-4 border-b border-pink-100">
+                  <p className="text-sm font-semibold text-slate-900 tracking-tight">Doblado + Pegado</p>
+                </div>
+                <div className="p-5">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className={lc}>Unitario doblado <span className="normal-case font-normal tracking-normal text-slate-400">$/u</span></label>
+                      <input type="number" value={printUnitarioDoblado} onChange={e => setPrintUnitarioDoblado(e.target.value)} placeholder="0" min="0" className={ic} />
+                    </div>
+                    <div>
+                      <label className={lc}>Cajas por caja</label>
+                      <input type="number" value={printCajasPorCaja} onChange={e => setPrintCajasPorCaja(e.target.value)} placeholder="0" min="0" className={ic} />
+                    </div>
+                    <div>
+                      <label className={lc}>Precio por caja <span className="normal-case font-normal tracking-normal text-slate-400">$</span></label>
+                      <input type="number" value={printPrecioPorCaja} onChange={e => setPrintPrecioPorCaja(e.target.value)} placeholder="0" min="0" className={ic} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Flete */}
+              <div className="bg-white rounded-2xl border border-green-200 ring-1 ring-green-50">
+                <div className="px-5 py-4 border-b border-green-100">
+                  <p className="text-sm font-semibold text-slate-900 tracking-tight">Flete</p>
+                </div>
+                <div className="p-5">
+                  <label className={lc}>Total flete <span className="normal-case font-normal tracking-normal text-slate-400">$</span></label>
+                  <input type="number" value={printTotalFlete} onChange={e => setPrintTotalFlete(e.target.value)} placeholder="0" min="0" className={ic} />
+                </div>
+              </div>
+
+              {/* Notas */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-5">
+                <label className={lc}>Notas del pedido</label>
+                <textarea value={notasCliente} onChange={e => setNotasCliente(e.target.value)}
+                  rows={3} placeholder="Colores Pantone, detalles del logo, arte adjunto..."
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-[10px] text-[13px] focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none bg-white text-slate-900 transition-all" />
+              </div>
+
+              {/* Buttons */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-5">
+                {!clienteId && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-4">
+                    <p className="text-[12px] text-amber-700 font-medium">Seleccioná un cliente para continuar</p>
+                  </div>
+                )}
+                {actionButtons}
+              </div>
+            </>
+          ) : isLumapack ? (
             <>
               {clienteSection}
 
@@ -531,7 +770,118 @@ export default function NuevoPedido() {
 
         {/* Right column */}
         <div className="lg:col-span-5">
-          {isLumapack ? (
+          {isPrintpack ? (
+            <div className="bg-slate-900 rounded-2xl lg:sticky lg:top-6 overflow-hidden">
+              <div className="px-5 py-4 border-b border-slate-700 flex items-center gap-2">
+                <Calculator size={14} className="text-sky-400" />
+                <p className="text-sm font-semibold text-white tracking-tight">Cotización en tiempo real</p>
+              </div>
+              <div className="p-5">
+                {printResultado ? (
+                  <div className="space-y-3">
+                    {/* Cartulina */}
+                    <div className="space-y-1.5">
+                      <p className="text-[10px] font-bold text-yellow-400 uppercase tracking-wider">Cartulina</p>
+                      <div className="flex justify-between text-[13px]">
+                        <span className="text-slate-400">Pliegos</span>
+                        <span className="text-white font-mono tabular-nums">{printResultado.cantPliegos.toFixed(0)}</span>
+                      </div>
+                      <div className="flex justify-between text-[13px]">
+                        <span className="text-slate-400">Kilos totales</span>
+                        <span className="text-white font-mono tabular-nums">{printResultado.kilosTotales.toFixed(3)} kg</span>
+                      </div>
+                      <div className="flex justify-between text-[13px]">
+                        <span className="text-slate-400">Costo cartulina total</span>
+                        <span className="text-white font-mono tabular-nums">${printResultado.costoCartulinaTotal.toLocaleString('es-AR', { maximumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="flex justify-between text-[13px]">
+                        <span className="text-slate-400">Costo cartulina / u</span>
+                        <span className="text-white font-mono tabular-nums">${printResultado.costoCartulinaUnit.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span>
+                      </div>
+                    </div>
+                    {/* Costo unitario */}
+                    <div className="border-t border-slate-700 pt-3 space-y-1.5">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Costo unitario</p>
+                      <div className="flex justify-between text-[13px]">
+                        <span className="text-slate-400">Cartulina</span>
+                        <span className="text-white font-mono tabular-nums">${printResultado.costoCartulinaUnit.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span>
+                      </div>
+                      <div className="flex justify-between text-[13px]">
+                        <span className="text-slate-400">Impresión</span>
+                        <span className="text-white font-mono tabular-nums">${printResultado.impresionUnit.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span>
+                      </div>
+                      <div className="flex justify-between text-[13px]">
+                        <span className="text-slate-400">Troquelado</span>
+                        <span className="text-white font-mono tabular-nums">${printResultado.troqueladoUnit.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span>
+                      </div>
+                      <div className="flex justify-between text-[13px]">
+                        <span className="text-slate-400">Poli</span>
+                        <span className="text-white font-mono tabular-nums">${printResultado.poliUnit.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span>
+                      </div>
+                      <div className="flex justify-between text-[13px]">
+                        <span className="text-slate-400">Relieve</span>
+                        <span className="text-white font-mono tabular-nums">${printResultado.relieveUnit.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span>
+                      </div>
+                      <div className="flex justify-between text-[13px]">
+                        <span className="text-slate-400">Stamping</span>
+                        <span className="text-white font-mono tabular-nums">${printResultado.stampingUnit.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span>
+                      </div>
+                      <div className="flex justify-between text-[13px]">
+                        <span className="text-slate-400">Doblado</span>
+                        <span className="text-white font-mono tabular-nums">${printResultado.unitarioDoblado.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span>
+                      </div>
+                      <div className="flex justify-between text-[13px]">
+                        <span className="text-slate-400">Caja</span>
+                        <span className="text-white font-mono tabular-nums">${printResultado.unitarioCajas.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span>
+                      </div>
+                      <div className="flex justify-between text-[13px]">
+                        <span className="text-slate-400">Flete</span>
+                        <span className="text-white font-mono tabular-nums">${printResultado.fleteUnit.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span>
+                      </div>
+                      <div className="flex justify-between text-[13px]">
+                        <span className="text-slate-400 font-semibold">Costo total / u</span>
+                        <span className="text-white font-semibold font-mono tabular-nums">${printResultado.costoTotal.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</span>
+                      </div>
+                    </div>
+                    {/* Margen */}
+                    <div className="border-t border-slate-700 pt-3 space-y-2">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Margen</p>
+                      <div className="flex items-center gap-3">
+                        <label className="text-[13px] text-slate-400 shrink-0">Margen %</label>
+                        <input
+                          type="number"
+                          value={printMargen}
+                          onChange={e => setPrintMargen(e.target.value)}
+                          min="0" max="99"
+                          className="w-full h-8 px-2 border border-slate-600 rounded-[8px] text-[13px] bg-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        />
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[13px] text-slate-400">Precio final / u</span>
+                        <span className="text-sky-400 font-bold text-xl font-mono tabular-nums">${printResultado.precioFinal.toLocaleString('es-AR', { maximumFractionDigits: 2 })}</span>
+                      </div>
+                    </div>
+                    <div className="border-t border-slate-700 mt-1 pt-4 flex justify-between items-baseline">
+                      <span className="text-[13px] font-semibold text-white">TOTAL</span>
+                      <span className="text-[28px] font-bold text-sky-400 font-mono tabular-nums leading-none">${printResultado.precioTotal.toLocaleString('es-AR', { maximumFractionDigits: 2 })}</span>
+                    </div>
+                    <div className="border-t border-slate-700 pt-3">
+                      {!clienteId && (
+                        <div className="bg-amber-900/30 border border-amber-700 rounded-xl px-3 py-2 mb-4">
+                          <p className="text-[12px] text-amber-400 font-medium">Seleccioná un cliente para continuar</p>
+                        </div>
+                      )}
+                      {actionButtons}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center py-16">
+                    <p className="text-[12px] text-slate-500 text-center">Completá los campos para ver la cotización</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : isLumapack ? (
             <div className="bg-slate-900 rounded-2xl lg:sticky lg:top-6 overflow-hidden">
               <div className="px-5 py-4 border-b border-slate-700 flex items-center gap-2">
                 <Calculator size={14} className="text-sky-400" />
