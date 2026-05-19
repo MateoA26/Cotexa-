@@ -64,16 +64,6 @@ function LogoMark({ size = 32 }: { size?: number }) {
   )
 }
 
-function Logo({ height = 40 }: { height?: number }) {
-  return (
-    <img
-      src="/Imagenes/Logo-sin-fondo-final.png"
-      alt="Cotexa — Cotizaciones · Pedidos · Resultados"
-      style={{ height: `${height}px`, width: 'auto', display: 'block', objectFit: 'contain' }}
-    />
-  )
-}
-
 // ── Dashboard Mockup ──────────────────────────────────────────────────────────
 
 function DashboardMockup() {
@@ -136,7 +126,7 @@ function DashboardMockup() {
         {/* Sidebar */}
         <aside className="bg-[#0a1226] text-white flex flex-col">
           <div className="px-4 py-5 border-b border-white/5">
-            <Logo height={32} />
+            <img src="/Imagenes/logo-cotexa-final.png" alt="Cotexa" style={{ height: 48 }} />
           </div>
           <nav className="flex-1 px-3 py-4 space-y-1 text-sm">
             {[
@@ -294,7 +284,7 @@ function Navbar() {
     <header className="absolute top-0 left-0 right-0 z-50">
       <div className="max-w-7xl mx-auto px-5 md:px-8 h-28 md:h-32 flex items-center justify-between gap-10">
         <a href="#top" className="shrink-0">
-          <img src="/imagenes/logo-cotexa-final.png" alt="Cotexa" style={{ height: 48 }} />
+          <img src="/Imagenes/logo-cotexa-final.png" alt="Cotexa" style={{ height: 48 }} />
         </a>
         <nav className="hidden md:flex items-center gap-10 text-sm text-slate-300 ml-auto mr-6">
           {links.map(([label, href]) => (
@@ -797,7 +787,7 @@ function Footer() {
       <div className="max-w-7xl mx-auto px-5 md:px-8">
         <div className="grid md:grid-cols-[2fr_1fr_1fr_1fr] gap-10">
           <div>
-            <Logo height={80} />
+            <img src="/Imagenes/logo-cotexa-final.png" alt="Cotexa" style={{ height: 48 }} />
             <p className="mt-5 text-sm max-w-xs leading-relaxed">
               De cotización a pedido, sin fricción. La plataforma comercial para tu equipo.
             </p>
