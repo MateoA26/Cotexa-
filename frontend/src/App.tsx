@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
+import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Layout from './components/Layout'
 import SuperAdminLayout from './components/SuperAdminLayout'
@@ -46,6 +47,8 @@ const ProduccionRoute = ({ children }: { children: React.ReactNode }) => {
 export default function App() {
   return (
     <Routes>
+      {/* Public */}
+      <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
 
       {/* SuperAdmin area */}
@@ -61,19 +64,18 @@ export default function App() {
         <Route index element={<Produccion />} />
       </Route>
 
-      {/* Regular app */}
-      <Route path="/" element={<AdminOnlyRoute><Layout /></AdminOnlyRoute>}>
-        <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="pedidos" element={<Pedidos />} />
-        <Route path="pedidos/nuevo" element={<NuevoPedido />} />
-        <Route path="pedidos/:id" element={<DetallePedido />} />
-        <Route path="clientes" element={<Clientes />} />
-        <Route path="configuracion" element={<Configuracion />} />
-        <Route path="configuracion/cotizador" element={<Cotizador />} />
+      {/* Regular app — pathless layout wrapper */}
+      <Route element={<AdminOnlyRoute><Layout /></AdminOnlyRoute>}>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/pedidos" element={<Pedidos />} />
+        <Route path="/pedidos/nuevo" element={<NuevoPedido />} />
+        <Route path="/pedidos/:id" element={<DetallePedido />} />
+        <Route path="/clientes" element={<Clientes />} />
+        <Route path="/configuracion" element={<Configuracion />} />
+        <Route path="/configuracion/cotizador" element={<Cotizador />} />
       </Route>
 
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }
