@@ -294,8 +294,7 @@ function Navbar() {
     <header className="absolute top-0 left-0 right-0 z-50">
       <div className="max-w-7xl mx-auto px-5 md:px-8 h-28 md:h-32 flex items-center justify-between gap-10">
         <a href="#top" className="shrink-0">
-          <span className="hidden md:block"><Logo height={72} /></span>
-          <span className="md:hidden"><Logo height={44} /></span>
+          <img src="/imagenes/logo-cotexa-final.png" alt="Cotexa" style={{ height: 48 }} />
         </a>
         <nav className="hidden md:flex items-center gap-10 text-sm text-slate-300 ml-auto mr-6">
           {links.map(([label, href]) => (
