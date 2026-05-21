@@ -281,7 +281,8 @@ export default function DetallePedido() {
   const [printAnchoCart, setPrintAnchoCart] = useState('')
   const [printAltoCart, setPrintAltoCart] = useState('')
   const [printGramaje, setPrintGramaje] = useState('')
-  const [printPrecioPorKilo, setPrintPrecioPorKilo] = useState('')
+  const [printPrecioKiloUSD, setPrintPrecioKiloUSD] = useState('')
+  const [printPrecioDolar, setPrintPrecioDolar] = useState('1490')
   const [printTotalTroquelado, setPrintTotalTroquelado] = useState('')
   const [printPoli, setPrintPoli] = useState('')
   const [printRelieve, setPrintRelieve] = useState('')
@@ -453,7 +454,8 @@ export default function DetallePedido() {
     const anchoCart = Number(printAnchoCart)
     const altoCart = Number(printAltoCart)
     const gramaje = Number(printGramaje)
-    const precioPorKilo = Number(printPrecioPorKilo)
+    const precioKiloUSD = Number(printPrecioKiloUSD)
+    const precioKiloARS = precioKiloUSD * Number(printPrecioDolar)
     const totalTroquelado = Number(printTotalTroquelado)
     const poli = Number(printPoli)
     const relieve = Number(printRelieve)
@@ -465,7 +467,7 @@ export default function DetallePedido() {
     const totalFlete = Number(printTotalFlete)
     const margen = Number(printMargen)
 
-    if (!unidades || !bocas || !anchoCart || !altoCart || !gramaje || !precioPorKilo) return null
+    if (!unidades || !bocas || !anchoCart || !altoCart || !gramaje || !precioKiloUSD) return null
 
     const cantPliegos = unidades / bocas
     const kilos500 = (anchoCart * altoCart * gramaje) / 20000
@@ -473,11 +475,11 @@ export default function DetallePedido() {
     const merma = kilos1000 * 0.10
     const kilosTotales = ((cantPliegos * kilos1000) / 1000) + merma
 
-    const costoCartulinaUnit = (kilosTotales * precioPorKilo) / unidades
+    const costoCartulinaUnit = (kilosTotales * precioKiloARS) / unidades
     const troqueladoUnit = totalTroquelado / unidades
-    const poliUnit = poli / unidades
-    const relieveUnit = relieve / unidades
-    const stampingUnit = stamping / unidades
+    const poliUnit = (anchoCart * altoCart * poli) / 10000
+    const relieveUnit = relieve
+    const stampingUnit = stamping
     const dobladoUnit = doblado / unidades
     const impresionUnit = totalImpresion / unidades
     const cajasTotales = cajasPorCaja > 0 ? unidades / cajasPorCaja : 0
@@ -489,7 +491,7 @@ export default function DetallePedido() {
     const precioTotal = precioFinal * unidades
 
     return { cantPliegos, kilosTotales, costoCartulinaUnit, troqueladoUnit, poliUnit, relieveUnit, stampingUnit, dobladoUnit, impresionUnit, unitarioCajas, fleteUnit, costoTotal, precioFinal, precioTotal }
-  }, [isPrintpack, editCantidad, printBocas, printAnchoCart, printAltoCart, printGramaje, printPrecioPorKilo,
+  }, [isPrintpack, editCantidad, printBocas, printAnchoCart, printAltoCart, printGramaje, printPrecioKiloUSD, printPrecioDolar,
       printTotalTroquelado, printPoli, printRelieve, printStamping, printDoblado, printTotalImpresion,
       printCajasPorCaja, printPrecioPorCaja, printTotalFlete, printMargen])
 
@@ -500,7 +502,10 @@ export default function DetallePedido() {
       const pp = datos.printpack
       if (!pp) return null
       const unidades = pedido.cantidad || 0
-      if (!unidades || !pp.bocas || !pp.anchoCart || !pp.altoCart || !pp.gramaje || !pp.precioPorKilo) return null
+      const precioKiloUSD = pp.precioKiloUSD ?? pp.precioPorKilo ?? 0
+      const precioDolar = pp.precioDolar ?? 1490
+      const precioKiloARS = precioKiloUSD * precioDolar
+      if (!unidades || !pp.bocas || !pp.anchoCart || !pp.altoCart || !pp.gramaje || !precioKiloUSD) return null
 
       const cantPliegos = unidades / pp.bocas
       const kilos500 = (pp.anchoCart * pp.altoCart * pp.gramaje) / 20000
@@ -508,11 +513,11 @@ export default function DetallePedido() {
       const merma = kilos1000 * 0.10
       const kilosTotales = ((cantPliegos * kilos1000) / 1000) + merma
 
-      const costoCartulinaUnit = (kilosTotales * pp.precioPorKilo) / unidades
+      const costoCartulinaUnit = (kilosTotales * precioKiloARS) / unidades
       const troqueladoUnit = (pp.totalTroquelado || 0) / unidades
-      const poliUnit = (pp.poli || 0) / unidades
-      const relieveUnit = (pp.relieve || 0) / unidades
-      const stampingUnit = (pp.stamping || 0) / unidades
+      const poliUnit = (pp.anchoCart * pp.altoCart * (pp.poli || 0)) / 10000
+      const relieveUnit = (pp.relieve || 0)
+      const stampingUnit = (pp.stamping || 0)
       const dobladoUnit = (pp.doblado || 0) / unidades
       const impresionUnit = (pp.totalImpresion || 0) / unidades
       const cajasTotales = pp.cajasPorCaja > 0 ? unidades / pp.cajasPorCaja : 0
@@ -580,7 +585,8 @@ export default function DetallePedido() {
       setPrintAnchoCart(String(pp.anchoCart ?? ''))
       setPrintAltoCart(String(pp.altoCart ?? ''))
       setPrintGramaje(String(pp.gramaje ?? ''))
-      setPrintPrecioPorKilo(String(pp.precioPorKilo ?? ''))
+      setPrintPrecioKiloUSD(String(pp.precioKiloUSD ?? pp.precioPorKilo ?? ''))
+      setPrintPrecioDolar(String(pp.precioDolar ?? '1490'))
       setPrintTotalTroquelado(String(pp.totalTroquelado ?? ''))
       setPrintPoli(String(pp.poli ?? ''))
       setPrintRelieve(String(pp.relieve ?? ''))
@@ -619,7 +625,8 @@ export default function DetallePedido() {
           setPrintAnchoCart(String(pp.anchoCart ?? ''))
           setPrintAltoCart(String(pp.altoCart ?? ''))
           setPrintGramaje(String(pp.gramaje ?? ''))
-          setPrintPrecioPorKilo(String(pp.precioPorKilo ?? ''))
+          setPrintPrecioKiloUSD(String(pp.precioKiloUSD ?? pp.precioPorKilo ?? ''))
+          setPrintPrecioDolar(String(pp.precioDolar ?? '1490'))
           setPrintTotalTroquelado(String(pp.totalTroquelado ?? ''))
           setPrintPoli(String(pp.poli ?? ''))
           setPrintRelieve(String(pp.relieve ?? ''))
@@ -662,7 +669,8 @@ export default function DetallePedido() {
           anchoCart: Number(printAnchoCart),
           altoCart: Number(printAltoCart),
           gramaje: Number(printGramaje),
-          precioPorKilo: Number(printPrecioPorKilo),
+          precioKiloUSD: Number(printPrecioKiloUSD),
+          precioDolar: Number(printPrecioDolar),
           totalTroquelado: Number(printTotalTroquelado),
           poli: Number(printPoli),
           relieve: Number(printRelieve),
@@ -846,10 +854,14 @@ export default function DetallePedido() {
                   <div><label className={lc}>Bocas</label><input type="number" value={printBocas} onChange={e => setPrintBocas(e.target.value)} placeholder="0" className={ic} /></div>
                   <div><label className={lc}>Gramaje (g/m²)</label><input type="number" value={printGramaje} onChange={e => setPrintGramaje(e.target.value)} placeholder="0" className={ic} /></div>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   <div><label className={lc}>Ancho (mm)</label><input type="number" value={printAnchoCart} onChange={e => setPrintAnchoCart(e.target.value)} placeholder="0" className={ic} /></div>
                   <div><label className={lc}>Alto (mm)</label><input type="number" value={printAltoCart} onChange={e => setPrintAltoCart(e.target.value)} placeholder="0" className={ic} /></div>
-                  <div><label className={lc}>Precio por kg ($)</label><input type="number" value={printPrecioPorKilo} onChange={e => setPrintPrecioPorKilo(e.target.value)} placeholder="0" className={ic} /></div>
+                  <div><label className={lc}>Precio por kg (USD)</label><input type="number" value={printPrecioKiloUSD} onChange={e => setPrintPrecioKiloUSD(e.target.value)} placeholder="0" className={ic} /></div>
+                  <div>
+                    <label className={lc}>Precio por kg (ARS)</label>
+                    <input type="number" value={(Number(printPrecioKiloUSD) * Number(printPrecioDolar)).toFixed(0)} readOnly className={`${ic} bg-slate-50 text-slate-500`} />
+                  </div>
                 </div>
               </div>
 
@@ -865,8 +877,8 @@ export default function DetallePedido() {
                 <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">Terminaciones</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div><label className={lc}>Polipropileno ($)</label><input type="number" value={printPoli} onChange={e => setPrintPoli(e.target.value)} placeholder="0" className={ic} /></div>
-                  <div><label className={lc}>Relieve ($)</label><input type="number" value={printRelieve} onChange={e => setPrintRelieve(e.target.value)} placeholder="0" className={ic} /></div>
-                  <div><label className={lc}>Stamping ($)</label><input type="number" value={printStamping} onChange={e => setPrintStamping(e.target.value)} placeholder="0" className={ic} /></div>
+                  <div><label className={lc}>Relieve (precio unitario)</label><input type="number" value={printRelieve} onChange={e => setPrintRelieve(e.target.value)} placeholder="0" className={ic} /></div>
+                  <div><label className={lc}>Stamping (precio unitario)</label><input type="number" value={printStamping} onChange={e => setPrintStamping(e.target.value)} placeholder="0" className={ic} /></div>
                   <div><label className={lc}>Doblado ($)</label><input type="number" value={printDoblado} onChange={e => setPrintDoblado(e.target.value)} placeholder="0" className={ic} /></div>
                 </div>
               </div>
@@ -881,8 +893,9 @@ export default function DetallePedido() {
               </div>
 
               <div className="bg-white rounded-2xl border border-sky-200 ring-1 ring-sky-100 p-5">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <div><label className={lc}>Cantidad</label><input type="number" value={editCantidad} onChange={e => setEditCantidad(e.target.value)} min="1" className={ic} /></div>
+                  <div><label className={lc}>Precio dólar</label><input type="number" value={printPrecioDolar} onChange={e => setPrintPrecioDolar(e.target.value)} placeholder="1490" className={ic} /></div>
                   <div><label className={lc}>Entrega estimada</label><input type="date" value={editEntregaEst} onChange={e => setEditEntregaEst(e.target.value)} className={ic} /></div>
                 </div>
               </div>

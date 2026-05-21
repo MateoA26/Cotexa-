@@ -32,7 +32,6 @@ export default function Layout() {
     { to: '/clientes', icon: Users, label: 'Clientes' },
     ...(isAdmin ? [
       { to: '/configuracion', icon: Settings, label: 'Configuración' },
-      { to: '/configuracion/cotizador', icon: Calculator, label: 'Cotizador' },
     ] : []),
   ]
 

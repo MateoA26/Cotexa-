@@ -124,7 +124,8 @@ export default function NuevoPedido() {
   const [printAnchoCart, setPrintAnchoCart] = useState('')
   const [printAltoCart, setPrintAltoCart] = useState('')
   const [printGramaje, setPrintGramaje] = useState('')
-  const [printPrecioPorKilo, setPrintPrecioPorKilo] = useState('')
+  const [printPrecioKiloUSD, setPrintPrecioKiloUSD] = useState('')
+  const [printPrecioDolar, setPrintPrecioDolar] = useState('1490')
   const [printTotalTroquelado, setPrintTotalTroquelado] = useState('')
   const [printPoli, setPrintPoli] = useState('0')
   const [printRelieve, setPrintRelieve] = useState('0')
@@ -199,7 +200,8 @@ export default function NuevoPedido() {
     const anchoCart = Number(printAnchoCart)
     const altoCart = Number(printAltoCart)
     const gramaje = Number(printGramaje)
-    const precioPorKilo = Number(printPrecioPorKilo)
+    const precioKiloUSD = Number(printPrecioKiloUSD)
+    const precioKiloARS = precioKiloUSD * Number(printPrecioDolar)
     const totalTroquelado = Number(printTotalTroquelado)
     const poli = Number(printPoli)
     const relieve = Number(printRelieve)
@@ -214,11 +216,11 @@ export default function NuevoPedido() {
     const kilos1000 = kilos500 * 2
     const merma = kilos1000 * 0.10
     const kilosTotales = ((cantPliegos * kilos1000) / 1000) + merma
-    const costoCartulinaUnit = (kilosTotales * precioPorKilo) / u
+    const costoCartulinaUnit = (kilosTotales * precioKiloARS) / u
     const troqueladoUnit = totalTroquelado / u
-    const poliUnit = poli / u
-    const relieveUnit = relieve / u
-    const stampingUnit = stamping / u
+    const poliUnit = (anchoCart * altoCart * poli) / 10000
+    const relieveUnit = relieve
+    const stampingUnit = stamping
     const impresionUnit = totalImpresion / u
     const cajasTotales = u / cajasPorCaja
     const unitarioCajas = (cajasTotales * precioPorCaja) / u
@@ -236,7 +238,7 @@ export default function NuevoPedido() {
       unitarioCajas, fleteUnit, unitarioDoblado,
       costoTotal, precioFinal, precioTotal,
     }
-  }, [cantidad, printBocas, printAnchoCart, printAltoCart, printGramaje, printPrecioPorKilo, printTotalTroquelado, printPoli, printRelieve, printStamping, printTotalImpresion, printUnitarioDoblado, printCajasPorCaja, printPrecioPorCaja, printTotalFlete, printMargen])
+  }, [cantidad, printBocas, printAnchoCart, printAltoCart, printGramaje, printPrecioKiloUSD, printPrecioDolar, printTotalTroquelado, printPoli, printRelieve, printStamping, printTotalImpresion, printUnitarioDoblado, printCajasPorCaja, printPrecioPorCaja, printTotalFlete, printMargen])
 
   const mutation = useMutation({
     mutationFn: (estado: string) => {
@@ -255,7 +257,8 @@ export default function NuevoPedido() {
               anchoCart: Number(printAnchoCart),
               altoCart: Number(printAltoCart),
               gramaje: Number(printGramaje),
-              precioPorKilo: Number(printPrecioPorKilo),
+              precioKiloUSD: Number(printPrecioKiloUSD),
+              precioDolar: Number(printPrecioDolar),
               totalTroquelado: Number(printTotalTroquelado),
               poli: Number(printPoli),
               relieve: Number(printRelieve),
@@ -396,7 +399,7 @@ export default function NuevoPedido() {
                   <p className="text-sm font-semibold text-slate-900 tracking-tight">Datos generales</p>
                 </div>
                 <div className="p-5">
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className={lc}>Cantidad</label>
                       <input type="number" value={cantidad} onChange={e => setCantidad(e.target.value)} min="1" className={ic} />
@@ -404,6 +407,10 @@ export default function NuevoPedido() {
                     <div>
                       <label className={lc}>Bocas</label>
                       <input type="number" value={printBocas} onChange={e => setPrintBocas(e.target.value)} min="1" className={ic} />
+                    </div>
+                    <div>
+                      <label className={lc}>Precio dólar</label>
+                      <input type="number" value={printPrecioDolar} onChange={e => setPrintPrecioDolar(e.target.value)} placeholder="1490" className={ic} />
                     </div>
                     <div>
                       <label className={lc}>Entrega estimada</label>
@@ -433,8 +440,12 @@ export default function NuevoPedido() {
                       <input type="number" value={printGramaje} onChange={e => setPrintGramaje(e.target.value)} placeholder="0" min="0" className={ic} />
                     </div>
                     <div>
-                      <label className={lc}>Precio por kilo <span className="normal-case font-normal tracking-normal text-slate-400">$/kg</span></label>
-                      <input type="number" value={printPrecioPorKilo} onChange={e => setPrintPrecioPorKilo(e.target.value)} placeholder="0" min="0" className={ic} />
+                      <label className={lc}>Precio por kg (USD)</label>
+                      <input type="number" value={printPrecioKiloUSD} onChange={e => setPrintPrecioKiloUSD(e.target.value)} placeholder="0" min="0" className={ic} />
+                    </div>
+                    <div className="col-span-2">
+                      <label className={lc}>Precio por kg (ARS) <span className="normal-case font-normal tracking-normal text-slate-400">calculado</span></label>
+                      <input type="number" value={(Number(printPrecioKiloUSD) * Number(printPrecioDolar)).toFixed(0)} readOnly className={`${ic} bg-slate-50 text-slate-500`} />
                     </div>
                   </div>
                 </div>
@@ -456,11 +467,11 @@ export default function NuevoPedido() {
                       <input type="number" value={printPoli} onChange={e => setPrintPoli(e.target.value)} placeholder="0" min="0" className={ic} />
                     </div>
                     <div>
-                      <label className={lc}>Relieve <span className="normal-case font-normal tracking-normal text-slate-400">$</span></label>
+                      <label className={lc}>Relieve (precio unitario)</label>
                       <input type="number" value={printRelieve} onChange={e => setPrintRelieve(e.target.value)} placeholder="0" min="0" className={ic} />
                     </div>
                     <div>
-                      <label className={lc}>Stamping <span className="normal-case font-normal tracking-normal text-slate-400">$</span></label>
+                      <label className={lc}>Stamping (precio unitario)</label>
                       <input type="number" value={printStamping} onChange={e => setPrintStamping(e.target.value)} placeholder="0" min="0" className={ic} />
                     </div>
                   </div>
