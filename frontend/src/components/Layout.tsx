@@ -36,7 +36,7 @@ export default function Layout() {
     { to: '/pedidos', icon: Package, label: 'Pedidos' },
     { to: '/clientes', icon: Users, label: 'Clientes' },
     ...(empresa?.slug !== 'printpack' ? [
-      { to: '/cotizador', icon: Calculator, label: 'Cotizador' },
+      { to: '/configuracion/cotizador', icon: Calculator, label: 'Cotizador' },
     ] : []),
     ...(isAdmin ? [
       { to: '/configuracion', icon: Settings, label: 'Configuración' },
