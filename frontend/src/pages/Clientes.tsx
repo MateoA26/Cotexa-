@@ -11,6 +11,13 @@ import {
 
 const initForm = { nombre: '', email: '', telefono: '', tipo: 'B2C', razonSocial: '', cuit: '', notas: '' }
 
+function formatCompact(n: number): string {
+  if (n >= 1_000_000_000) return '$' + (n / 1_000_000_000).toFixed(1) + 'B'
+  if (n >= 1_000_000) return '$' + (n / 1_000_000).toFixed(1) + 'M'
+  if (n >= 1_000) return '$' + (n / 1_000).toFixed(1) + 'K'
+  return '$' + n.toLocaleString('es-AR')
+}
+
 const AVATAR_COLORS = ['#0ea5e9', '#8b5cf6', '#f59e0b', '#10b981', '#ec4899']
 const initials = (n: string) => n.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase()
 const colorFor = (n: string) => AVATAR_COLORS[n.charCodeAt(0) % AVATAR_COLORS.length]
@@ -394,8 +401,8 @@ export default function Clientes() {
                       ))
                     ) : (
                       [
-                        { label: 'Facturado', value: `$${totalFacturado.toLocaleString('es-AR')}` },
-                        { label: 'Ticket prom.', value: `$${ticketPromedio.toLocaleString('es-AR')}` },
+                        { label: 'Facturado', value: formatCompact(totalFacturado) },
+                        { label: 'Ticket prom.', value: formatCompact(ticketPromedio) },
                         { label: 'En proceso', value: String(pedidosActivosCount) },
                       ].map(m => (
                         <div key={m.label} className="bg-slate-50 rounded-xl p-2.5 text-center">
