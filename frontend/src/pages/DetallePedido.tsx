@@ -323,7 +323,16 @@ export default function DetallePedido() {
 
   useEffect(() => {
     if (!pedido) return
-    setNotasAdmin(isLumapack ? '' : (pedido.notasAdmin || ''))
+    if (!isLumapack) {
+      try {
+        const parsed = JSON.parse(pedido.notasAdmin || '{}')
+        setNotasAdmin(parsed.notasTexto || '')
+      } catch {
+        setNotasAdmin(pedido.notasAdmin || '')
+      }
+    } else {
+      setNotasAdmin('')
+    }
   }, [pedido, isLumapack])
 
   const { data: tiposCaja = [] } = useQuery({
@@ -741,7 +750,9 @@ export default function DetallePedido() {
   }
 
   const saveNotas = async () => {
-    await mutation.mutateAsync({ notasAdmin })
+    const existing = (() => { try { return JSON.parse(pedido?.notasAdmin || '{}') } catch { return {} } })()
+    const merged = JSON.stringify({ ...existing, notasTexto: notasAdmin })
+    await mutation.mutateAsync({ notasAdmin: merged })
     setNotasSaved(true)
     setTimeout(() => setNotasSaved(false), 2000)
   }
