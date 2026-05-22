@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { LayoutDashboard, Package, Users, LogOut, Menu, X, Settings, Search, Calculator } from 'lucide-react'
 import NotificationBell from './NotificationBell'
 import { useQuery } from '@tanstack/react-query'
-import { pedidosApi, clientesApi } from '../services/api'
+import { pedidosApi, clientesApi, empresaApi } from '../services/api'
 import { Pedido, Cliente } from '../types'
 import { ESTADO_LABELS, ESTADO_COLORS } from '../utils/estados'
 
@@ -26,10 +26,18 @@ export default function Layout() {
 
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPERADMIN'
 
+  const { data: empresa } = useQuery({
+    queryKey: ['empresa'],
+    queryFn: () => empresaApi.get().then(r => r.data),
+  })
+
   const navItems = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/pedidos', icon: Package, label: 'Pedidos' },
     { to: '/clientes', icon: Users, label: 'Clientes' },
+    ...(empresa?.slug !== 'printpack' ? [
+      { to: '/cotizador', icon: Calculator, label: 'Cotizador' },
+    ] : []),
     ...(isAdmin ? [
       { to: '/configuracion', icon: Settings, label: 'Configuración' },
     ] : []),
