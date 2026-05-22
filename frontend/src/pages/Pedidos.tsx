@@ -23,20 +23,24 @@ export default function Pedidos() {
   const [busqueda, setBusqueda] = useState('')
   const navigate = useNavigate()
 
-  const { data: pedidos = [], isLoading } = useQuery<Pedido[]>({
+  const { data: todosLosPedidos = [] } = useQuery<Pedido[]>({
+    queryKey: ['pedidos', 'all'],
+    queryFn: () => pedidosApi.getAll().then(r => r.data),
+  })
+
+  const { data: pedidosFiltrados = [], isLoading } = useQuery<Pedido[]>({
     queryKey: ['pedidos', estadoFiltro],
     queryFn: () => pedidosApi.getAll(estadoFiltro ? { estado: estadoFiltro } : undefined).then(r => r.data),
   })
 
-  const filtrados = pedidos.filter(p =>
+  const filtrados = pedidosFiltrados.filter(p =>
     !busqueda ||
     p.cliente.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
     String(p.numeroPedido).includes(busqueda)
   )
 
-  // Count per state across all loaded pedidos (unfiltered)
   const countPorEstado = (e: string) =>
-    e ? pedidos.filter(p => p.estado === e).length : pedidos.length
+    e ? todosLosPedidos.filter(p => p.estado === e).length : todosLosPedidos.length
 
   return (
     <div className="max-w-[1360px] mx-auto px-7 py-7">
@@ -45,7 +49,7 @@ export default function Pedidos() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-7">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Pedidos</h1>
-          <p className="text-sm text-slate-500 mt-1">{pedidos.length} pedido{pedidos.length !== 1 ? 's' : ''} en total</p>
+          <p className="text-sm text-slate-500 mt-1">{todosLosPedidos.length} pedido{todosLosPedidos.length !== 1 ? 's' : ''} en total</p>
         </div>
         <button onClick={() => navigate('/pedidos/nuevo')}
           className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-[10px] text-[13px] font-semibold shadow-[0_4px_12px_-4px_rgba(14,165,233,0.4)] transition-colors self-start sm:self-auto">
