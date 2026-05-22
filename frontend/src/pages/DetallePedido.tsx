@@ -328,7 +328,7 @@ export default function DetallePedido() {
         const parsed = JSON.parse(pedido.notasAdmin || '{}')
         setNotasAdmin(parsed.notasTexto || '')
       } catch {
-        setNotasAdmin(pedido.notasAdmin || '')
+        setNotasAdmin("")
       }
     } else {
       setNotasAdmin('')
