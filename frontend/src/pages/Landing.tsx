@@ -816,7 +816,7 @@ function Footer() {
         </div>
 
         <div className="mt-12 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-          <div>© 2025 Cotexa. Todos los derechos reservados.</div>
+          <div>© 2026 Cotexa. Todos los derechos reservados.</div>
           <div className="font-mono text-slate-600">COT · EXA · v1.0</div>
         </div>
       </div>
