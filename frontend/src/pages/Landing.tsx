@@ -122,9 +122,10 @@ function DashboardMockup() {
         <div className="ml-3 text-[11px] font-mono text-slate-500">app.cotexa.io/dashboard</div>
       </div>
 
-      <div className="grid grid-cols-[200px_1fr] min-h-[600px]">
-        {/* Sidebar */}
-        <aside className="bg-[#0a1226] text-white flex flex-col">
+      {/* ── layout: sidebar hidden on mobile, shown md+ ── */}
+      <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] md:min-h-[600px]">
+        {/* Sidebar – hidden on mobile */}
+        <aside className="bg-[#0a1226] text-white hidden md:flex flex-col">
           <div className="px-4 py-5 border-b border-white/5">
             <img src="/Imagenes/logo-cotexa-final.png" alt="Cotexa" style={{ height: 300 }} />
           </div>
@@ -156,44 +157,45 @@ function DashboardMockup() {
         </aside>
 
         {/* Main */}
-        <div className="flex flex-col bg-white">
-          <div className="flex items-center gap-4 px-6 py-3.5 border-b border-slate-200 bg-[#0a1226] text-white">
-            <div className="flex-1 max-w-md">
+        <div className="flex flex-col bg-white min-w-0">
+          <div className="flex items-center gap-3 px-4 sm:px-6 py-3.5 border-b border-slate-200 bg-[#0a1226] text-white">
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.04] ring-1 ring-white/10 text-slate-400 text-xs">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
                 </svg>
-                <span>Buscar pedidos, clientes…</span>
+                <span className="truncate">Buscar pedidos, clientes…</span>
               </div>
             </div>
-            <div className="ml-auto flex items-center gap-4">
+            <div className="flex items-center gap-3 shrink-0">
               <div className="relative">
                 <IconBell size={18} className="text-slate-300" />
                 <span className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-rose-500 text-[10px] flex items-center justify-center font-semibold">5</span>
               </div>
-              <div className="text-right leading-tight">
+              <div className="text-right leading-tight hidden sm:block">
                 <div className="text-xs font-medium">Demo Usuario</div>
                 <div className="text-[10px] text-slate-400 font-mono">ejemplodemo@cotexa.com</div>
               </div>
             </div>
           </div>
 
-          <div className="flex-1 p-6 bg-slate-50">
+          <div className="flex-1 p-4 sm:p-6 bg-slate-50">
             <div className="text-[10px] font-semibold tracking-[0.18em] text-sky-500">MARTES, 19 DE MAYO DE 2026</div>
             <h3 className="mt-1 text-2xl font-bold text-slate-900">Dashboard</h3>
             <p className="text-xs text-slate-500">Resumen de tu operación</p>
 
-            <div className="mt-5 grid grid-cols-4 gap-3">
+            {/* KPIs: 2-col on mobile, 4-col on md+ */}
+            <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3">
               {kpis.map((k) => (
                 <div key={k.label} className="rounded-xl bg-white ring-1 ring-slate-200/80 p-3.5 relative overflow-hidden">
                   <div className="flex items-start justify-between">
-                    <div className="text-[9px] font-semibold tracking-wider text-slate-400">{k.label}</div>
-                    <div className={`h-6 w-6 rounded-md flex items-center justify-center ${k.iconBg}`}>{k.icon}</div>
+                    <div className="text-[9px] font-semibold tracking-wider text-slate-400 leading-tight">{k.label}</div>
+                    <div className={`h-6 w-6 rounded-md flex items-center justify-center shrink-0 ml-1 ${k.iconBg}`}>{k.icon}</div>
                   </div>
                   <div className="mt-1.5 flex items-baseline gap-1.5">
                     <div className="text-lg font-bold text-slate-900 truncate">{k.value}</div>
                     {k.badge && (
-                      <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-rose-50 text-rose-600">{k.badge}</span>
+                      <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-rose-50 text-rose-600 shrink-0">{k.badge}</span>
                     )}
                   </div>
                   <svg viewBox="0 0 180 48" className="mt-1 w-full h-8" preserveAspectRatio="none">
@@ -210,31 +212,37 @@ function DashboardMockup() {
               ))}
             </div>
 
-            <div className="mt-5 grid grid-cols-[1.7fr_1fr] gap-3">
+            {/* Orders + chart: 1-col on mobile, 2-col on md+ */}
+            <div className="mt-5 grid grid-cols-1 md:grid-cols-[1.7fr_1fr] gap-3">
               <div className="rounded-xl bg-white ring-1 ring-slate-200/80 p-4">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-semibold text-slate-900">Últimos pedidos</h4>
                   <div className="text-[10px] text-slate-400 font-mono">6 recientes</div>
                 </div>
-                <div className="mt-3 grid grid-cols-[40px_1fr_120px_100px_70px] gap-2 text-[9px] font-semibold tracking-wider text-slate-400 pb-2 border-b border-slate-100">
-                  <div>#</div><div>CLIENTE</div><div>ESTADO</div><div>TOTAL</div><div>FECHA</div>
-                </div>
-                {orders.map((o, i) => (
-                  <div key={i} className="grid grid-cols-[40px_1fr_120px_100px_70px] gap-2 items-center py-2 text-[11px] border-b border-slate-50 last:border-0">
-                    <div className="font-mono text-slate-400">{o.id}</div>
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-semibold text-white shrink-0" style={{ background: o.color }}>{o.initials}</div>
-                      <span className="text-slate-800 truncate">{o.client}</span>
+                {/* Scrollable table on small screens */}
+                <div className="overflow-x-auto mt-3">
+                  <div className="min-w-[380px]">
+                    <div className="grid grid-cols-[40px_1fr_120px_100px_70px] gap-2 text-[9px] font-semibold tracking-wider text-slate-400 pb-2 border-b border-slate-100">
+                      <div>#</div><div>CLIENTE</div><div>ESTADO</div><div>TOTAL</div><div>FECHA</div>
                     </div>
-                    <div>
-                      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ring-1 ${toneMap[o.tone]}`}>
-                        {statusIcons[o.tone]} {o.status}
-                      </span>
-                    </div>
-                    <div className="font-semibold text-slate-900">{o.total}</div>
-                    <div className="font-mono text-slate-400">{o.date}</div>
+                    {orders.map((o, i) => (
+                      <div key={i} className="grid grid-cols-[40px_1fr_120px_100px_70px] gap-2 items-center py-2 text-[11px] border-b border-slate-50 last:border-0">
+                        <div className="font-mono text-slate-400">{o.id}</div>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-semibold text-white shrink-0" style={{ background: o.color }}>{o.initials}</div>
+                          <span className="text-slate-800 truncate">{o.client}</span>
+                        </div>
+                        <div>
+                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ring-1 ${toneMap[o.tone]}`}>
+                            {statusIcons[o.tone]} {o.status}
+                          </span>
+                        </div>
+                        <div className="font-semibold text-slate-900">{o.total}</div>
+                        <div className="font-mono text-slate-400">{o.date}</div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
               </div>
 
               <div className="rounded-xl bg-white ring-1 ring-slate-200/80 p-4">
@@ -282,9 +290,15 @@ function Navbar() {
 
   return (
     <header className="absolute top-0 left-0 right-0 z-50">
-      <div className="max-w-7xl mx-auto pl-2 md:pl-4 pr-5 md:pr-8 h-28 md:h-32 flex items-center justify-between gap-10">
+      <div className="max-w-7xl mx-auto pl-2 md:pl-4 pr-4 md:pr-8 h-24 sm:h-28 md:h-32 flex items-center justify-between gap-6 md:gap-10">
         <a href="#top" className="shrink-0">
-          <img src="/Imagenes/logo-cotexa-final.png" alt="Cotexa" style={{ height: 250, width: "auto" }} />
+          {/* Logo scales down on mobile: smaller height, same aspect ratio */}
+          <img
+            src="/Imagenes/logo-cotexa-final.png"
+            alt="Cotexa"
+            className="h-[110px] sm:h-[150px] md:h-[210px]"
+            style={{ width: 'auto' }}
+          />
         </a>
         <nav className="hidden md:flex items-center gap-10 text-sm text-slate-300 ml-auto mr-6">
           {links.map(([label, href]) => (
@@ -316,14 +330,14 @@ function Navbar() {
 
 function Hero() {
   return (
-    <section id="top" className="relative hero-bg noise overflow-hidden pt-40 md:pt-48 pb-24">
+    <section id="top" className="relative hero-bg noise overflow-hidden pt-36 sm:pt-40 md:pt-48 pb-16 md:pb-24">
       <div className="orb bg-sky-500"     style={{ width: 420, height: 420, top: '5%',    left: '-6%',  animation: 'landing-float 9s ease-in-out infinite' }}></div>
       <div className="orb bg-emerald-500" style={{ width: 360, height: 360, bottom: '10%', right: '-6%', opacity: .35, animation: 'landing-float 11s ease-in-out infinite reverse' }}></div>
 
       <div className="absolute inset-0 grid-bg opacity-60"></div>
       <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-[#0f172a]"></div>
 
-      <div className="relative max-w-6xl w-full mx-auto px-5 md:px-8 text-center">
+      <div className="relative max-w-6xl w-full mx-auto px-4 sm:px-5 md:px-8 text-center">
         <div data-reveal="" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-slate-300 font-medium">
           <span className="relative flex h-1.5 w-1.5">
             <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
@@ -332,16 +346,16 @@ function Hero() {
           Beta abierta · Para equipos comerciales
         </div>
 
-        <h1 data-reveal="" data-delay="1" className="mt-6 text-4xl sm:text-5xl md:text-6xl lg:text-[4.6rem] leading-[1.04] font-semibold tracking-tight text-white">
+        <h1 data-reveal="" data-delay="1" className="mt-6 text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-[4.6rem] leading-[1.04] font-semibold tracking-tight text-white">
           De cotización a pedido,<br />
           <span className="bg-gradient-to-r from-sky-400 via-sky-300 to-emerald-400 bg-clip-text text-transparent">sin fricción.</span>
         </h1>
 
-        <p data-reveal="" data-delay="2" className="mt-6 text-lg text-slate-300/90 max-w-2xl mx-auto leading-relaxed">
+        <p data-reveal="" data-delay="2" className="mt-5 sm:mt-6 text-base sm:text-lg text-slate-300/90 max-w-2xl mx-auto leading-relaxed">
           Cotexa ordena, conecta y acelera el flujo comercial de tu empresa — desde la primera cotización hasta el pedido final.
         </p>
 
-        <div data-reveal="" data-delay="3" className="mt-9 flex flex-col sm:flex-row gap-3 justify-center">
+        <div data-reveal="" data-delay="3" className="mt-7 sm:mt-9 flex flex-col sm:flex-row gap-3 justify-center">
           <a href="https://wa.me/5491136706079" className="btn-primary px-6 py-3.5 rounded-xl inline-flex items-center justify-center gap-2">
             Solicitar demo <IconArrow size={18} />
           </a>
@@ -350,13 +364,14 @@ function Hero() {
           </a>
         </div>
 
-        <div data-reveal="" data-delay="4" className="mt-8 flex flex-wrap gap-x-8 gap-y-3 justify-center text-xs text-slate-400">
+        <div data-reveal="" data-delay="4" className="mt-7 sm:mt-8 flex flex-wrap gap-x-6 sm:gap-x-8 gap-y-3 justify-center text-xs text-slate-400">
           <div className="flex items-center gap-2"><IconCheck size={14} className="text-emerald-400" /> Sin tarjeta de crédito</div>
           <div className="flex items-center gap-2"><IconCheck size={14} className="text-emerald-400" /> Setup en 48 hs</div>
           <div className="flex items-center gap-2"><IconCheck size={14} className="text-emerald-400" /> Soporte dedicado</div>
         </div>
 
-        <div data-reveal="" data-delay="3" className="mt-16 md:mt-20 relative">
+        {/* Mockup wrapper – overflow-hidden prevents any internal overflow escaping */}
+        <div data-reveal="" data-delay="3" className="mt-12 sm:mt-16 md:mt-20 relative overflow-hidden rounded-2xl">
           <DashboardMockup />
         </div>
       </div>
@@ -391,33 +406,33 @@ function Problem() {
   ]
 
   return (
-    <section id="producto" className="relative py-28 bg-navy-900 text-white overflow-hidden">
+    <section id="producto" className="relative py-16 md:py-28 bg-navy-900 text-white overflow-hidden">
       <div className="absolute inset-0 grid-bg opacity-40"></div>
-      <div className="relative max-w-7xl mx-auto px-5 md:px-8">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-5 md:px-8">
         <div className="max-w-2xl">
           <div data-reveal="" className="text-xs uppercase tracking-[0.2em] font-mono text-sky-400">El problema</div>
-          <h2 data-reveal="" data-delay="1" className="mt-3 text-4xl md:text-5xl font-semibold tracking-tight">¿Te suena familiar?</h2>
+          <h2 data-reveal="" data-delay="1" className="mt-3 text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight">¿Te suena familiar?</h2>
         </div>
 
-        <div className="mt-14 grid md:grid-cols-3 gap-5">
+        <div className="mt-10 sm:mt-14 grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
           {items.map(({ Icon: Ico, title, body }, i) => (
             <div
               key={i}
               data-reveal=""
               data-delay={`${i + 1}`}
-              className="group tilt relative rounded-2xl bg-white/[0.03] ring-1 ring-white/10 p-7 hover:ring-white/20"
+              className="group tilt relative rounded-2xl bg-white/[0.03] ring-1 ring-white/10 p-5 sm:p-7 hover:ring-white/20"
             >
-              <div className="absolute top-6 right-6 text-[11px] font-mono text-slate-600">0{i + 1}</div>
-              <div className="h-12 w-12 rounded-xl bg-rose-500/10 ring-1 ring-rose-500/30 flex items-center justify-center text-rose-300 group-hover:scale-110 transition">
+              <div className="absolute top-5 right-5 sm:top-6 sm:right-6 text-[11px] font-mono text-slate-600">0{i + 1}</div>
+              <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl bg-rose-500/10 ring-1 ring-rose-500/30 flex items-center justify-center text-rose-300 group-hover:scale-110 transition">
                 <Ico size={22} />
               </div>
-              <h3 className="mt-6 text-xl font-semibold leading-snug">{title}</h3>
-              <p className="mt-3 text-slate-400 leading-relaxed text-[15px]">{body}</p>
+              <h3 className="mt-5 sm:mt-6 text-lg sm:text-xl font-semibold leading-snug">{title}</h3>
+              <p className="mt-3 text-slate-400 leading-relaxed text-sm sm:text-[15px]">{body}</p>
             </div>
           ))}
         </div>
 
-        <div data-reveal="" data-delay="4" className="mt-16 flex items-center justify-center gap-3 text-slate-400">
+        <div data-reveal="" data-delay="4" className="mt-12 sm:mt-16 flex items-center justify-center gap-3 text-slate-400">
           <span className="h-[1px] w-10 bg-slate-700"></span>
           <span className="text-sm">Existe una mejor manera.</span>
           <IconArrow size={18} className="text-sky-400" />
@@ -438,44 +453,44 @@ function Solution() {
   ]
 
   return (
-    <section className="relative py-28 bg-slate-50 overflow-hidden">
+    <section className="relative py-16 md:py-28 bg-slate-50 overflow-hidden">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent"></div>
-      <div className="relative max-w-7xl mx-auto px-5 md:px-8">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-5 md:px-8">
         <div className="max-w-3xl">
           <div data-reveal="" className="text-xs uppercase tracking-[0.2em] font-mono text-sky-600">La solución</div>
-          <h2 data-reveal="" data-delay="1" className="mt-3 text-4xl md:text-5xl font-semibold tracking-tight text-navy-900">
+          <h2 data-reveal="" data-delay="1" className="mt-3 text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight text-navy-900">
             Una plataforma que conecta todo tu proceso comercial.
           </h2>
-          <p data-reveal="" data-delay="2" className="mt-5 text-lg text-slate-600 leading-relaxed">
+          <p data-reveal="" data-delay="2" className="mt-4 sm:mt-5 text-base sm:text-lg text-slate-600 leading-relaxed">
             Cuatro módulos pensados para una sola cosa: que nada se pierda entre la primera consulta y la entrega final.
           </p>
         </div>
 
-        <div className="mt-16 grid md:grid-cols-2 gap-5">
+        <div className="mt-12 sm:mt-16 grid sm:grid-cols-2 gap-4 sm:gap-5">
           {feats.map(({ Icon: Ico, title, body, tag }, i) => (
             <div
               key={i}
               data-reveal=""
               data-delay={`${(i % 2) + 1}`}
-              className="tilt group relative rounded-2xl bg-white ring-1 ring-slate-200 p-7 overflow-hidden"
+              className="tilt group relative rounded-2xl bg-white ring-1 ring-slate-200 p-5 sm:p-7 overflow-hidden"
             >
               <div className="absolute top-0 left-0 h-[3px] w-14 bg-gradient-to-r from-sky-500 to-emerald-500 opacity-0 group-hover:opacity-100 group-hover:w-24 transition-all duration-500"></div>
               <div className="flex items-start gap-4">
-                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-sky-500 to-sky-600 flex items-center justify-center text-white shadow-lg shadow-sky-500/20 group-hover:shadow-sky-500/40 transition">
+                <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl bg-gradient-to-br from-sky-500 to-sky-600 flex items-center justify-center text-white shadow-lg shadow-sky-500/20 group-hover:shadow-sky-500/40 transition shrink-0">
                   <Ico size={22} />
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-xl font-semibold text-navy-900">{title}</h3>
-                    <span className="text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">{tag}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-lg sm:text-xl font-semibold text-navy-900">{title}</h3>
+                    <span className="text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 shrink-0">{tag}</span>
                   </div>
-                  <p className="mt-2.5 text-slate-600 leading-relaxed text-[15px]">{body}</p>
+                  <p className="mt-2.5 text-slate-600 leading-relaxed text-sm sm:text-[15px]">{body}</p>
                 </div>
               </div>
 
-              <div className="mt-6 rounded-lg bg-slate-50 ring-1 ring-slate-200/70 p-3">
+              <div className="mt-5 sm:mt-6 rounded-lg bg-slate-50 ring-1 ring-slate-200/70 p-3">
                 {i === 0 && (
-                  <div className="flex items-center justify-between text-[12px]">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-[12px]">
                     <div className="font-mono text-slate-500">Caja corrugada · 24×18×10</div>
                     <div className="flex items-center gap-2">
                       <span className="px-2 py-0.5 rounded bg-white ring-1 ring-slate-200 text-slate-700">500 u</span>
@@ -484,19 +499,21 @@ function Solution() {
                   </div>
                 )}
                 {i === 1 && (
-                  <div className="flex items-center gap-1.5">
-                    {['Cotización', 'Aprobada', 'Producción', 'Entregada'].map((s, j) => (
-                      <React.Fragment key={s}>
-                        <div className={`px-2 py-1 rounded text-[11px] ${j <= 1 ? 'bg-emerald-500 text-white' : 'bg-white ring-1 ring-slate-200 text-slate-500'}`}>{s}</div>
-                        {j < 3 && <div className={`flex-1 h-[2px] ${j < 1 ? 'bg-emerald-500' : 'bg-slate-200'}`}></div>}
-                      </React.Fragment>
-                    ))}
+                  <div className="overflow-x-auto">
+                    <div className="flex items-center gap-1.5 min-w-[280px]">
+                      {['Cotización', 'Aprobada', 'Producción', 'Entregada'].map((s, j) => (
+                        <React.Fragment key={s}>
+                          <div className={`px-2 py-1 rounded text-[11px] whitespace-nowrap ${j <= 1 ? 'bg-emerald-500 text-white' : 'bg-white ring-1 ring-slate-200 text-slate-500'}`}>{s}</div>
+                          {j < 3 && <div className={`flex-1 h-[2px] ${j < 1 ? 'bg-emerald-500' : 'bg-slate-200'}`}></div>}
+                        </React.Fragment>
+                      ))}
+                    </div>
                   </div>
                 )}
                 {i === 2 && (
                   <div className="flex items-center justify-between text-[12px]">
                     <div className="flex items-center gap-2">
-                      <div className="h-7 w-7 rounded-full bg-gradient-to-br from-sky-400 to-emerald-400"></div>
+                      <div className="h-7 w-7 rounded-full bg-gradient-to-br from-sky-400 to-emerald-400 shrink-0"></div>
                       <div>
                         <div className="font-medium text-navy-900">Laboratorios Andina</div>
                         <div className="font-mono text-[10px] text-slate-500">42 pedidos · $ 1.2M</div>
@@ -512,7 +529,7 @@ function Solution() {
                       ['Entrega programada', 'cliente'],
                     ].map(([a, b]) => (
                       <div key={a} className="flex items-center gap-2 text-[11.5px]">
-                        <span className="h-1.5 w-1.5 rounded-full bg-sky-500"></span>
+                        <span className="h-1.5 w-1.5 rounded-full bg-sky-500 shrink-0"></span>
                         <span className="text-slate-700">{a}</span>
                         <span className="ml-auto font-mono text-slate-400">→ {b}</span>
                       </div>
@@ -539,28 +556,28 @@ function HowItWorks() {
   ]
 
   return (
-    <section id="como-funciona" className="relative py-28 bg-navy-900 text-white overflow-hidden">
+    <section id="como-funciona" className="relative py-16 md:py-28 bg-navy-900 text-white overflow-hidden">
       <div className="absolute inset-0 grid-bg opacity-40"></div>
       <div className="orb bg-sky-500" style={{ width: 500, height: 500, top: '20%', right: '-10%', opacity: .15 }}></div>
 
-      <div className="relative max-w-7xl mx-auto px-5 md:px-8">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-5 md:px-8">
         <div className="max-w-2xl">
           <div data-reveal="" className="text-xs uppercase tracking-[0.2em] font-mono text-sky-400">Flujo</div>
-          <h2 data-reveal="" data-delay="1" className="mt-3 text-4xl md:text-5xl font-semibold tracking-tight">Así funciona Cotexa.</h2>
-          <p data-reveal="" data-delay="2" className="mt-5 text-lg text-slate-300/90">Cuatro pasos que antes tomaban días. Ahora, minutos.</p>
+          <h2 data-reveal="" data-delay="1" className="mt-3 text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight">Así funciona Cotexa.</h2>
+          <p data-reveal="" data-delay="2" className="mt-4 sm:mt-5 text-base sm:text-lg text-slate-300/90">Cuatro pasos que antes tomaban días. Ahora, minutos.</p>
         </div>
 
-        <div className="mt-16 relative">
+        <div className="mt-12 sm:mt-16 relative">
           <div className="hidden lg:block absolute top-[3.25rem] left-8 right-8 h-[2px] step-line opacity-50"></div>
-          <div className="grid lg:grid-cols-4 gap-6 relative">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 relative">
             {steps.map((s, i) => (
               <div key={s.n} data-reveal="" data-delay={`${i + 1}`} className="relative">
-                <div className="relative z-10 h-14 w-14 rounded-2xl bg-gradient-to-br from-sky-500 to-emerald-500 flex items-center justify-center font-mono font-semibold text-lg shadow-lg shadow-sky-500/30">
+                <div className="relative z-10 h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-gradient-to-br from-sky-500 to-emerald-500 flex items-center justify-center font-mono font-semibold text-base sm:text-lg shadow-lg shadow-sky-500/30">
                   {s.n}
                   <span className="absolute inset-0 rounded-2xl ring-2 ring-sky-400 animate-pulse-ring"></span>
                 </div>
-                <h3 className="mt-6 text-xl font-semibold">{s.title}</h3>
-                <p className="mt-2 text-slate-400 text-[15px] leading-relaxed">{s.body}</p>
+                <h3 className="mt-5 sm:mt-6 text-lg sm:text-xl font-semibold">{s.title}</h3>
+                <p className="mt-2 text-slate-400 text-sm sm:text-[15px] leading-relaxed">{s.body}</p>
               </div>
             ))}
           </div>
@@ -580,21 +597,21 @@ function Scale() {
   ]
 
   return (
-    <section className="relative py-28 bg-slate-50">
-      <div className="max-w-7xl mx-auto px-5 md:px-8">
+    <section className="relative py-16 md:py-28 bg-slate-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-5 md:px-8">
         <div className="max-w-2xl">
           <div data-reveal="" className="text-xs uppercase tracking-[0.2em] font-mono text-sky-600">Escalabilidad</div>
-          <h2 data-reveal="" data-delay="1" className="mt-3 text-4xl md:text-5xl font-semibold tracking-tight text-navy-900">Diseñado para crecer con vos.</h2>
+          <h2 data-reveal="" data-delay="1" className="mt-3 text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight text-navy-900">Diseñado para crecer con vos.</h2>
         </div>
 
-        <div className="mt-14 grid md:grid-cols-3 gap-5">
+        <div className="mt-10 sm:mt-14 grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
           {props.map(({ Icon: Ico, title, body }, i) => (
-            <div key={i} data-reveal="" data-delay={`${i + 1}`} className="tilt rounded-2xl bg-white ring-1 ring-slate-200 p-7">
-              <div className="h-11 w-11 rounded-xl bg-navy-900 text-white flex items-center justify-center">
+            <div key={i} data-reveal="" data-delay={`${i + 1}`} className="tilt rounded-2xl bg-white ring-1 ring-slate-200 p-5 sm:p-7">
+              <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-navy-900 text-white flex items-center justify-center">
                 <Ico size={20} />
               </div>
-              <h3 className="mt-6 text-lg font-semibold text-navy-900">{title}</h3>
-              <p className="mt-2 text-slate-600 text-[15px] leading-relaxed">{body}</p>
+              <h3 className="mt-5 sm:mt-6 text-base sm:text-lg font-semibold text-navy-900">{title}</h3>
+              <p className="mt-2 text-slate-600 text-sm sm:text-[15px] leading-relaxed">{body}</p>
             </div>
           ))}
         </div>
@@ -613,39 +630,43 @@ function SocialProof() {
   ]
 
   return (
-    <section className="relative py-28 bg-white">
-      <div className="max-w-7xl mx-auto px-5 md:px-8">
+    <section className="relative py-16 md:py-28 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-5 md:px-8">
         <div className="text-center max-w-2xl mx-auto">
           <div data-reveal="" className="text-xs uppercase tracking-[0.2em] font-mono text-sky-600">Confianza</div>
-          <h2 data-reveal="" data-delay="1" className="mt-3 text-4xl md:text-5xl font-semibold tracking-tight text-navy-900">
+          <h2 data-reveal="" data-delay="1" className="mt-3 text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight text-navy-900">
             Construido para equipos que cotizan todos los días.
           </h2>
         </div>
 
-        <div className="mt-14 grid md:grid-cols-3 gap-0 rounded-2xl ring-1 ring-slate-200 overflow-hidden">
+        <div className="mt-10 sm:mt-14 grid md:grid-cols-3 gap-0 rounded-2xl ring-1 ring-slate-200 overflow-hidden">
           {stats.map((s, i) => (
             <div
               key={i}
               data-reveal=""
               data-delay={`${i + 1}`}
-              className={`p-10 text-center ${i < 2 ? 'md:border-r border-slate-200' : ''}`}
+              className={`p-6 sm:p-8 md:p-10 text-center ${
+                i < 2
+                  ? 'border-b md:border-b-0 md:border-r border-slate-200'
+                  : ''
+              }`}
             >
-              <div className="text-5xl md:text-6xl font-semibold tracking-tight bg-gradient-to-b from-navy-900 to-slate-700 bg-clip-text text-transparent">{s.v}</div>
+              <div className="text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tight bg-gradient-to-b from-navy-900 to-slate-700 bg-clip-text text-transparent">{s.v}</div>
               <div className="mt-2 text-slate-500 text-sm">{s.l}</div>
             </div>
           ))}
         </div>
 
-        <div data-reveal="" data-delay="2" className="mt-14 max-w-3xl mx-auto rounded-2xl bg-gradient-to-br from-navy-900 to-navy-800 text-white p-10 md:p-12 relative overflow-hidden">
+        <div data-reveal="" data-delay="2" className="mt-10 sm:mt-14 max-w-3xl mx-auto rounded-2xl bg-gradient-to-br from-navy-900 to-navy-800 text-white p-6 sm:p-8 md:p-12 relative overflow-hidden">
           <div className="absolute -top-10 -right-10 text-sky-500/20">
             <IconQuote size={160} />
           </div>
           <div className="relative">
-            <p className="text-xl md:text-2xl font-medium leading-snug text-slate-100">
+            <p className="text-base sm:text-xl md:text-2xl font-medium leading-snug text-slate-100">
               "Pasamos de perder cotizaciones en mails a tener un panel donde vemos el estado de cada pedido en vivo. Nuestro equipo comercial ahorra muchas horas por semana."
             </p>
-            <div className="mt-8 flex items-center gap-4">
-              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-sky-400 to-emerald-400 flex items-center justify-center text-navy-900 font-semibold">PP</div>
+            <div className="mt-6 sm:mt-8 flex items-center gap-4">
+              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-gradient-to-br from-sky-400 to-emerald-400 flex items-center justify-center text-navy-900 font-semibold shrink-0">PP</div>
               <div>
                 <div className="font-medium">PrintPack</div>
                 <div className="text-sm text-slate-400 font-mono">cliente beta</div>
@@ -680,21 +701,21 @@ function Pricing() {
   ]
 
   return (
-    <section id="precios" className="relative py-28 bg-slate-50">
-      <div className="max-w-7xl mx-auto px-5 md:px-8">
+    <section id="precios" className="relative py-16 md:py-28 bg-slate-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-5 md:px-8">
         <div className="text-center max-w-2xl mx-auto">
           <div data-reveal="" className="text-xs uppercase tracking-[0.2em] font-mono text-sky-600">Precios</div>
-          <h2 data-reveal="" data-delay="1" className="mt-3 text-4xl md:text-5xl font-semibold tracking-tight text-navy-900">Planes simples y transparentes.</h2>
-          <p data-reveal="" data-delay="2" className="mt-5 text-lg text-slate-600">Empezá gratis. Escalá cuando lo necesites.</p>
+          <h2 data-reveal="" data-delay="1" className="mt-3 text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight text-navy-900">Planes simples y transparentes.</h2>
+          <p data-reveal="" data-delay="2" className="mt-4 sm:mt-5 text-base sm:text-lg text-slate-600">Empezá gratis. Escalá cuando lo necesites.</p>
         </div>
 
-        <div className="mt-14 grid md:grid-cols-3 gap-5 items-stretch">
+        <div className="mt-10 sm:mt-14 grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 items-stretch">
           {plans.map((p, i) => (
             <div
               key={p.name}
               data-reveal=""
               data-delay={`${i + 1}`}
-              className={`relative rounded-2xl p-8 flex flex-col transition ${
+              className={`relative rounded-2xl p-6 sm:p-8 flex flex-col transition ${
                 p.highlight
                   ? 'bg-navy-900 text-white ring-1 ring-sky-500/40 shadow-2xl shadow-sky-500/10 md:-translate-y-3 md:scale-[1.02]'
                   : 'bg-white ring-1 ring-slate-200 text-navy-900'
@@ -706,14 +727,14 @@ function Pricing() {
                 </div>
               )}
               <div className="text-sm font-medium opacity-70">{p.name}</div>
-              <div className="mt-3 flex items-baseline gap-2">
-                <span className="text-5xl font-semibold tracking-tight">{p.price}</span>
+              <div className="mt-3 flex items-baseline gap-2 flex-wrap">
+                <span className="text-4xl sm:text-5xl font-semibold tracking-tight">{p.price}</span>
                 {p.cadence && <span className={`text-sm ${p.highlight ? 'text-slate-400' : 'text-slate-500'}`}>{p.cadence}</span>}
               </div>
-              <div className={`mt-6 h-px ${p.highlight ? 'bg-white/10' : 'bg-slate-200'}`}></div>
-              <ul className="mt-6 space-y-3 flex-1">
+              <div className={`mt-5 sm:mt-6 h-px ${p.highlight ? 'bg-white/10' : 'bg-slate-200'}`}></div>
+              <ul className="mt-5 sm:mt-6 space-y-3 flex-1">
                 {p.features.map(f => (
-                  <li key={f} className="flex items-start gap-2.5 text-[14.5px]">
+                  <li key={f} className="flex items-start gap-2.5 text-sm sm:text-[14.5px]">
                     <IconCheck size={18} className={p.highlight ? 'text-emerald-400 shrink-0 mt-0.5' : 'text-sky-600 shrink-0 mt-0.5'} />
                     <span className={p.highlight ? 'text-slate-200' : 'text-slate-700'}>{f}</span>
                   </li>
@@ -721,7 +742,7 @@ function Pricing() {
               </ul>
               <a
                 href={p.ctaHref}
-                className={`mt-8 inline-flex items-center justify-center gap-2 rounded-xl py-3 font-medium transition ${
+                className={`mt-7 sm:mt-8 inline-flex items-center justify-center gap-2 rounded-xl py-3 font-medium transition ${
                   p.highlight
                     ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/30'
                     : 'bg-navy-900 hover:bg-navy-800 text-white'
@@ -741,31 +762,31 @@ function Pricing() {
 
 function FinalCTA() {
   return (
-    <section id="contacto" className="relative py-28 overflow-hidden">
+    <section id="contacto" className="relative py-16 md:py-28 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-[#0b1226] to-sky-600"></div>
       <div className="absolute inset-0 grid-bg opacity-30"></div>
       <div className="orb bg-sky-400"     style={{ width: 500, height: 500, top: '-20%',   right: '10%',  opacity: .25 }}></div>
       <div className="orb bg-emerald-500" style={{ width: 380, height: 380, bottom: '-30%', left: '-5%',  opacity: .2  }}></div>
 
-      <div className="relative max-w-4xl mx-auto px-5 md:px-8 text-center text-white">
+      <div className="relative max-w-4xl mx-auto px-4 sm:px-5 md:px-8 text-center text-white">
         <div data-reveal="" className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3 py-1.5 text-xs">
           <IconSparkle size={14} className="text-emerald-300" /> Acceso anticipado
         </div>
-        <h2 data-reveal="" data-delay="1" className="mt-6 text-4xl md:text-6xl font-semibold tracking-tight leading-[1.05]">
+        <h2 data-reveal="" data-delay="1" className="mt-6 text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.05]">
           ¿Listo para ordenar<br />tu proceso comercial?
         </h2>
-        <p data-reveal="" data-delay="2" className="mt-6 text-lg md:text-xl text-slate-200/90">
+        <p data-reveal="" data-delay="2" className="mt-5 sm:mt-6 text-base sm:text-lg md:text-xl text-slate-200/90">
           Empezá hoy. Sin tarjeta de crédito.
         </p>
-        <div data-reveal="" data-delay="3" className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
-          <a href="#" className="btn-primary px-7 py-4 rounded-xl inline-flex items-center justify-center gap-2 text-base">
+        <div data-reveal="" data-delay="3" className="mt-8 sm:mt-10 flex flex-col sm:flex-row gap-3 justify-center">
+          <a href="#" className="btn-primary px-6 sm:px-7 py-3.5 sm:py-4 rounded-xl inline-flex items-center justify-center gap-2 text-sm sm:text-base">
             Solicitar acceso gratuito <IconArrow size={18} />
           </a>
-          <a href="/login" className="btn-ghost px-7 py-4 rounded-xl inline-flex items-center justify-center gap-2 text-base">
+          <a href="/login" className="btn-ghost px-6 sm:px-7 py-3.5 sm:py-4 rounded-xl inline-flex items-center justify-center gap-2 text-sm sm:text-base">
             Iniciar sesión
           </a>
         </div>
-        <div data-reveal="" data-delay="4" className="mt-10 text-sm text-slate-300/80 flex items-center justify-center gap-2">
+        <div data-reveal="" data-delay="4" className="mt-8 sm:mt-10 text-sm text-slate-300/80 flex items-center justify-center gap-2">
           <a href="mailto:cotexa2026@gmail.com" className="hover:text-white transition inline-flex items-center gap-2"><IconMail size={16} /> cotexa2026@gmail.com</a>
         </div>
       </div>
@@ -783,15 +804,21 @@ function Footer() {
   ]
 
   return (
-    <footer className="bg-navy-950 text-slate-400 py-14 border-t border-white/5">
-      <div className="max-w-7xl mx-auto px-5 md:px-8">
-        <div className="grid md:grid-cols-[2fr_1fr_1fr_1fr] gap-10">
+    <footer className="bg-navy-950 text-slate-400 py-10 md:py-14 border-t border-white/5">
+      <div className="max-w-7xl mx-auto px-4 sm:px-5 md:px-8">
+        <div className="grid sm:grid-cols-2 md:grid-cols-[2fr_1fr_1fr_1fr] gap-8 md:gap-10">
           <div>
-            <img src="/Imagenes/logo-cotexa-final.png" alt="Cotexa" style={{ height: 300 }} />
-            <p className="mt-5 text-sm max-w-xs leading-relaxed">
+            {/* Footer logo: responsive height */}
+            <img
+              src="/Imagenes/logo-cotexa-final.png"
+              alt="Cotexa"
+              className="h-[160px] sm:h-[200px] md:h-[240px]"
+              style={{ width: 'auto' }}
+            />
+            <p className="mt-4 sm:mt-5 text-sm max-w-xs leading-relaxed">
               De cotización a pedido, sin fricción. La plataforma comercial para tu equipo.
             </p>
-            <div className="mt-5 flex items-center gap-2">
+            <div className="mt-4 sm:mt-5 flex items-center gap-2">
               {[
                 { I: IconLinkedin,  href: 'https://www.linkedin.com/company/cotexa-com-ar/about/' },
                 { I: IconInstagram, href: 'https://www.instagram.com/cotexa.com.ar/' },
@@ -815,7 +842,7 @@ function Footer() {
           ))}
         </div>
 
-        <div className="mt-12 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+        <div className="mt-10 sm:mt-12 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
           <div>© 2026 Cotexa. Todos los derechos reservados.</div>
           <div className="font-mono text-slate-600">COT · EXA · v1.0</div>
         </div>
