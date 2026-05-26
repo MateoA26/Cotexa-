@@ -293,7 +293,7 @@ function Navbar() {
         </nav>
         <div className="hidden md:flex items-center gap-5">
           <a href="/login" className="text-sm text-slate-300 hover:text-white transition whitespace-nowrap">Iniciar sesión</a>
-          <a href="#contacto" className="btn-primary text-sm px-5 py-2.5 rounded-lg whitespace-nowrap">Solicitar demo</a>
+          <a href="https://wa.me/5491136706079" className="btn-primary text-sm px-5 py-2.5 rounded-lg whitespace-nowrap">Solicitar demo</a>
         </div>
         <button className="md:hidden text-white" onClick={() => setOpen(!open)} aria-label="menu">
           {open ? <IconX /> : <IconMenu />}
@@ -305,7 +305,7 @@ function Navbar() {
             <a key={label} href={href} onClick={() => setOpen(false)} className="block text-slate-200 py-1">{label}</a>
           ))}
           <a href="/login" className="block text-slate-200 py-1">Iniciar sesión</a>
-          <a href="#contacto" className="btn-primary text-sm px-4 py-2 rounded-lg inline-block">Solicitar demo</a>
+          <a href="https://wa.me/5491136706079" className="btn-primary text-sm px-4 py-2 rounded-lg inline-block">Solicitar demo</a>
         </div>
       )}
     </header>
@@ -342,7 +342,7 @@ function Hero() {
         </p>
 
         <div data-reveal="" data-delay="3" className="mt-9 flex flex-col sm:flex-row gap-3 justify-center">
-          <a href="#contacto" className="btn-primary px-6 py-3.5 rounded-xl inline-flex items-center justify-center gap-2">
+          <a href="https://wa.me/5491136706079" className="btn-primary px-6 py-3.5 rounded-xl inline-flex items-center justify-center gap-2">
             Solicitar demo <IconArrow size={18} />
           </a>
           <a href="#como-funciona" className="btn-ghost px-6 py-3.5 rounded-xl inline-flex items-center justify-center gap-2">
@@ -665,17 +665,17 @@ function Pricing() {
     {
       name: 'Free',       price: '$0',         cadence: 'para empezar',
       features: ['Hasta 20 pedidos / mes', '1 usuario', 'Cotizador básico', 'Historial de clientes', 'Soporte por mail'],
-      cta: 'Crear cuenta',    highlight: false,
+      cta: 'Crear cuenta',    ctaHref: '#contacto',                          highlight: false,
     },
     {
       name: 'Pro',        price: '$49',        cadence: 'por mes',
       features: ['Pedidos ilimitados', 'Hasta 5 usuarios', 'Cotizador configurable', 'Notificaciones automáticas', 'Soporte prioritario'],
-      cta: 'Solicitar demo',  highlight: true,
+      cta: 'Solicitar demo',  ctaHref: 'https://wa.me/5491136706079',        highlight: true,
     },
     {
       name: 'Enterprise', price: 'A consultar', cadence: '',
       features: ['Multi-empresa', 'Usuarios ilimitados', 'API access', 'Integraciones a medida', 'Onboarding dedicado'],
-      cta: 'Contactar ventas', highlight: false,
+      cta: 'Contactar ventas', ctaHref: '#contacto',                         highlight: false,
     },
   ]
 
@@ -720,7 +720,7 @@ function Pricing() {
                 ))}
               </ul>
               <a
-                href="#contacto"
+                href={p.ctaHref}
                 className={`mt-8 inline-flex items-center justify-center gap-2 rounded-xl py-3 font-medium transition ${
                   p.highlight
                     ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/30'
@@ -766,7 +766,7 @@ function FinalCTA() {
           </a>
         </div>
         <div data-reveal="" data-delay="4" className="mt-10 text-sm text-slate-300/80 flex items-center justify-center gap-2">
-          <IconMail size={16} /> hola@cotexa.io
+          <a href="mailto:cotexa2026@gmail.com" className="hover:text-white transition inline-flex items-center gap-2"><IconMail size={16} /> cotexa2026@gmail.com</a>
         </div>
       </div>
     </section>
@@ -792,8 +792,12 @@ function Footer() {
               De cotización a pedido, sin fricción. La plataforma comercial para tu equipo.
             </p>
             <div className="mt-5 flex items-center gap-2">
-              {[IconLinkedin, IconInstagram, IconTwitter].map((I, i) => (
-                <a key={i} href="#" className="h-9 w-9 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] ring-1 ring-white/5 flex items-center justify-center text-slate-400 hover:text-white transition">
+              {[
+                { I: IconLinkedin,  href: 'https://www.linkedin.com/company/cotexa-com-ar/about/' },
+                { I: IconInstagram, href: 'https://www.instagram.com/cotexa.com.ar/' },
+                { I: IconTwitter,   href: '#' },
+              ].map(({ I, href }, i) => (
+                <a key={i} href={href} className="h-9 w-9 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] ring-1 ring-white/5 flex items-center justify-center text-slate-400 hover:text-white transition">
                   <I size={16} />
                 </a>
               ))}
