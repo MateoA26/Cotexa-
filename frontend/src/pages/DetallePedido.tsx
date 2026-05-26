@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api, { pedidosApi, camposApi, archivosApi, empresaApi, preciosApi } from '../services/api'
 import { Pedido, CampoCustom, ArchivoAdjunto } from '../types'
 import { ESTADO_LABELS, ESTADO_COLORS, ESTADOS_ORDEN } from '../utils/estados'
-import { ArrowLeft, Edit2, Download, Calculator, FileText, Clock, CheckCircle2, Package, Truck, XCircle, Upload, Trash2, Image as ImageIcon, File as FileIcon, MessageSquare } from 'lucide-react'
+import { ArrowLeft, Edit2, Download, Calculator, FileText, Clock, CheckCircle2, Package, Truck, XCircle, Upload, Trash2, Image as ImageIcon, File as FileIcon, MessageSquare, Copy } from 'lucide-react'
 
 const formatSize = (bytes: number) => {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -376,6 +376,38 @@ export default function DetallePedido() {
       queryClient.invalidateQueries({ queryKey: ['pedidos'] })
     }
   })
+
+  const duplicarMutation = useMutation({
+    mutationFn: (data: any) => pedidosApi.create(data),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['pedidos'] })
+      navigate(`/pedidos/${res.data.id}`)
+    },
+  })
+
+  const handleDuplicar = () => {
+    if (!pedido) return
+    duplicarMutation.mutate({
+      clienteId:     pedido.clienteId,
+      largo:         pedido.largo,
+      ancho:         pedido.ancho,
+      alto:          pedido.alto,
+      material:      pedido.material,
+      materialId:    (pedido as any).materialId,
+      impresion:     pedido.impresion,
+      cantidad:      pedido.cantidad,
+      notasCliente:  pedido.notasCliente,
+      entregaEst:    pedido.entregaEst,
+      precioBase:    pedido.precioBase,
+      precioTotal:   pedido.precioTotal,
+      notasAdmin:    pedido.notasAdmin,   // preserves PrintPack / Lumapack JSON
+      estado:        'COTIZACION',
+      valoresCampos: (pedido.valoresCampos || []).map(v => ({
+        campoId: v.campoId,
+        valor:   v.valor,
+      })),
+    })
+  }
 
   const materialesActivos = materiales.filter(m => m.activo)
 
@@ -816,6 +848,15 @@ export default function DetallePedido() {
               <span className="hidden sm:inline">Editar</span>
             </button>
           )}
+          <button
+            onClick={handleDuplicar}
+            disabled={duplicarMutation.isPending}
+            className="flex items-center gap-1.5 h-9 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-[10px] text-[13px] font-semibold transition-colors disabled:opacity-50">
+            <Copy size={13} />
+            <span className="hidden sm:inline">
+              {duplicarMutation.isPending ? 'Duplicando…' : 'Duplicar'}
+            </span>
+          </button>
           <button onClick={() => printQuote(pedido, empresa?.logoUrl, empresa?.nombre)}
             className="flex items-center gap-1.5 h-9 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-[10px] text-[13px] font-semibold transition-colors">
             <Download size={13} />
