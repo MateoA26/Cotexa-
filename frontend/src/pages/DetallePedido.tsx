@@ -1,3 +1,4 @@
+import { evaluate } from "mathjs"
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -435,7 +436,7 @@ export default function DetallePedido() {
     const evalFormula = (formula: string) => {
       try {
         const expr = formula.replace(/E/g, String(E)).replace(/F/g, String(F)).replace(/G/g, String(G))
-        return Function('"use strict"; return (' + expr + ')')()
+        return evaluate(expr)
       } catch { return 0 }
     }
 
@@ -475,7 +476,7 @@ export default function DetallePedido() {
       const evalFormula = (formula: string) => {
         try {
           const expr = formula.replace(/E/g, String(E)).replace(/F/g, String(F)).replace(/G/g, String(G))
-          return Function('"use strict"; return (' + expr + ')')()
+          return evaluate(expr)
         } catch { return 0 }
       }
       const anchoPlancha = evalFormula(tipoCaja.formulaAncho)

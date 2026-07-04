@@ -1,3 +1,4 @@
+import { evaluate } from "mathjs"
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
@@ -69,7 +70,7 @@ function calcularLumapack(
         .replace(/E/g, String(E))
         .replace(/F/g, String(F))
         .replace(/G/g, String(G))
-      return new Function('"use strict"; return (' + expr + ')')() as number
+      return evaluate(expr) as number
     } catch { return 0 }
   }
 
