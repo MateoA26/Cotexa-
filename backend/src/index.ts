@@ -1,3 +1,4 @@
+import rateLimit from "express-rate-limit"
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
@@ -18,11 +19,13 @@ const app = express()
 const PORT = process.env.PORT || 3001
 
 app.use(cors({ origin: true, credentials: true }))
+const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { error: "Demasiados intentos" } })
 app.use(express.json())
 app.get("/health", (req, res) => res.status(200).json({ status: "ok" }))
 
 app.use('/api', webhookRoutes)                // ← NUEVO (va primero, sin auth)
-app.use('/api/auth', authRoutes)
+app.use("/api/auth/login", loginLimiter)
+app.use("/api/auth", authRoutes)
 app.use('/api/pedidos', pedidosRoutes)
 app.use('/api/clientes', clientesRoutes)
 app.use('/api/dashboard', dashboardRoutes)
