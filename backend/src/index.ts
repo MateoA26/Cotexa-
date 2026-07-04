@@ -19,6 +19,7 @@ const PORT = process.env.PORT || 3001
 
 app.use(cors({ origin: true, credentials: true }))
 app.use(express.json())
+app.get("/health", (req, res) => res.status(200).json({ status: "ok" }))
 
 app.use('/api', webhookRoutes)                // ← NUEVO (va primero, sin auth)
 app.use('/api/auth', authRoutes)
