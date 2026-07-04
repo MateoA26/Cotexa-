@@ -13,30 +13,39 @@ api.interceptors.response.use(
     return Promise.reject(err)
   }
 )
+export const authApi = {
+  login: (email: string, password: string) => api.post('/auth/login', { email, password }),
+  logout: () => api.post('/auth/logout'),
+  seed: () => api.post('/auth/seed'),
+  cambiarPassword: (passwordActual: string, passwordNuevo: string) =>
+    api.patch('/auth/cambiar-password', { passwordActual, passwordNuevo }),
+  actualizarUsuario: (data: { nombre?: string; email?: string }) =>
+    api.patch('/auth/usuario/me', data),
+}
+export const empresaApi = {
+  get: () => api.get('/auth/empresa'),
+  update: (data: any) => api.patch('/auth/empresa/me', data),
+}
 export const dashboardApi = {
   get: () => api.get('/dashboard')
 }
-
 export const pedidosApi = {
   getAll: (params?: { estado?: string; clienteId?: number }) => api.get('/pedidos', { params }),
   getOne: (id: number) => api.get(`/pedidos/${id}`),
   create: (data: any) => api.post('/pedidos', data),
   update: (id: number, data: any) => api.patch(`/pedidos/${id}`, data)
 }
-
 export const clientesApi = {
   getAll: () => api.get('/clientes'),
   create: (data: any) => api.post('/clientes', data),
   update: (id: number, data: any) => api.patch(`/clientes/${id}`, data),
   delete: (id: number) => api.delete(`/clientes/${id}`),
 }
-
 export const notificacionesApi = {
   getAll: () => api.get('/notificaciones'),
   leer: (id: number) => api.patch(`/notificaciones/${id}/leer`),
   leerTodas: () => api.patch('/notificaciones/leer-todas'),
 }
-
 export const superadminApi = {
   getEmpresas: () => api.get('/superadmin/empresas'),
   createEmpresa: (data: any) => api.post('/superadmin/empresas', data),
@@ -48,7 +57,6 @@ export const superadminApi = {
   createEmpresaUsuario: (empresaId: number, data: any) => api.post(`/superadmin/empresas/${empresaId}/usuarios`, data),
   updateEmpresaUsuario: (empresaId: number, userId: number, data: any) => api.patch(`/superadmin/empresas/${empresaId}/usuarios/${userId}`, data),
 }
-
 export const preciosApi = {
   getConfig: () => api.get('/precios/config'),
   updateConfig: (data: { precioBase: number }) => api.patch('/precios/config', data),
@@ -61,14 +69,12 @@ export const preciosApi = {
   updateTramo: (id: number, data: any) => api.patch(`/precios/tramos/${id}`, data),
   deleteTramo: (id: number) => api.delete(`/precios/tramos/${id}`),
 }
-
 export const camposApi = {
   getAll: () => api.get('/campos'),
   create: (data: any) => api.post('/campos', data),
   update: (id: number, data: any) => api.patch(`/campos/${id}`, data),
   delete: (id: number) => api.delete(`/campos/${id}`)
 }
-
 export const archivosApi = {
   getAll: (pedidoId: number) => api.get(`/archivos/${pedidoId}`),
   upload: (pedidoId: number, file: File) => {
@@ -80,5 +86,4 @@ export const archivosApi = {
   },
   delete: (archivoId: number) => api.delete(`/archivos/${archivoId}`),
 }
-
 export default api
