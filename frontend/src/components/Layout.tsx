@@ -22,7 +22,7 @@ export default function Layout() {
   const [searchOpen, setSearchOpen] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
 
-  const handleLogout = () => { logout(); navigate('/login') }
+  const handleLogout = async () => { try { await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/auth/logout`, { method: 'POST', credentials: 'include' }) } catch {} logout(); navigate('/login') }
 
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPERADMIN'
 

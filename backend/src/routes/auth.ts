@@ -21,10 +21,7 @@ router.patch('/empresa/me', requireAuth, async (req: AuthRequest, res: Response)
   if (nombre !== undefined) data.nombre = nombre
   if (email !== undefined) data.email = email
   if (logoUrl !== undefined) data.logoUrl = logoUrl
-  const empresa = await prisma.empresa.update({
-    where: { id: req.user.empresaId },
-    data
-  })
+  const empresa = await prisma.empresa.update({ where: { id: req.user.empresaId }, data })
   res.json(empresa)
 })
 
@@ -57,10 +54,25 @@ router.post('/login', async (req: Request, res: Response) => {
       process.env.JWT_SECRET!,
       { expiresIn: '7d' }
     )
-    res.json({ token, user: { id: user.id, nombre: user.nombre, email: user.email, role: user.role } })
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    })
+    res.json({ user: { id: user.id, nombre: user.nombre, email: user.email, role: user.role } })
   } catch (err) {
     res.status(500).json({ error: 'Error del servidor' })
   }
+})
+
+router.post('/logout', (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
+  })
+  res.json({ ok: true })
 })
 
 router.post('/seed', async (_req: Request, res: Response) => {
@@ -121,6 +133,7 @@ router.post('/seed', async (_req: Request, res: Response) => {
         { empresaId: demoEmpresa.id, nombre: 'ACME S.A.', email: 'compras@acme.com', tipo: 'B2B', razonSocial: 'ACME S.A.', cuit: '30-12345678-9' }
       ]
     })
+
     res.json({ ok: true, usuarios: [
       'admin@cotexa.com / admin123 (SUPERADMIN)',
       'ejemplodemo@cotexa.com / demo123 (ADMIN)',

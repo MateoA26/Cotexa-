@@ -1,6 +1,7 @@
 import rateLimit from "express-rate-limit"
 import express from 'express'
 import cors from 'cors'
+import cookieParser from 'cookie-parser'
 import dotenv from 'dotenv'
 import authRoutes from './routes/auth'
 import pedidosRoutes from './routes/pedidos'
@@ -21,6 +22,7 @@ const PORT = process.env.PORT || 3001
 app.use(cors({ origin: ['https://cotexa.com.ar', 'https://www.cotexa.com.ar', 'http://localhost:5173', 'http://localhost:3000'], credentials: true }))
 const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { error: "Demasiados intentos" } })
 app.use(express.json())
+app.use(cookieParser())
 app.get("/health", (req, res) => res.status(200).json({ status: "ok" }))
 
 app.use('/api', webhookRoutes)                // ← NUEVO (va primero, sin auth)
