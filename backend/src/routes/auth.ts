@@ -60,7 +60,7 @@ router.post('/login', async (req: Request, res: Response) => {
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000
     })
-    res.json({ user: { id: user.id, nombre: user.nombre, email: user.email, role: user.role } })
+    res.json({ token, user: { id: user.id, nombre: user.nombre, email: user.email, role: user.role } })
   } catch (err) {
     res.status(500).json({ error: 'Error del servidor' })
   }
