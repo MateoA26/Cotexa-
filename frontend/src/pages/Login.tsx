@@ -35,7 +35,7 @@ export default function Login() {
     setError('')
     try {
       const res = await authApi.login(email, password)
-      login(res.data.user)
+      login(res.data.token, res.data.user)
       navigate('/dashboard')
     } catch {
       setError('Email o contraseña incorrectos')
