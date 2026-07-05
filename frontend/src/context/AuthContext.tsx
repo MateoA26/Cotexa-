@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { User } from '../types'
 interface AuthContextType {
   user: User | null
-  login: (user: User) => void
+  login: (token: string, user: User) => void
   logout: () => void
   updateUser: (data: Partial<User>) => void
   isAuthenticated: boolean
@@ -14,11 +14,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const savedUser = localStorage.getItem('user')
     if (savedUser) setUser(JSON.parse(savedUser))
   }, [])
-  const login = (user: User) => {
+  const login = (token: string, user: User) => {
+    localStorage.setItem('token', token)
     localStorage.setItem('user', JSON.stringify(user))
     setUser(user)
   }
   const logout = () => {
+    localStorage.removeItem('token')
     localStorage.removeItem('user')
     setUser(null)
   }
