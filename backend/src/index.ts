@@ -14,6 +14,7 @@ import superadminRoutes from './routes/superadmin'
 import preciosRoutes from './routes/precios'
 import archivosRoutes from './routes/archivos'
 import cotizadorAvanzadoRouter from './routes/cotizadorAvanzado'
+import { requireAuth } from './middleware/auth'
 
 dotenv.config()
 const app = express()
@@ -29,14 +30,14 @@ app.use('/api', webhookRoutes)                // ← NUEVO (va primero, sin auth
 app.use("/api/auth/login", loginLimiter)
 app.use("/api/auth", authRoutes)
 app.use('/api/pedidos', pedidosRoutes)
-app.use('/api/clientes', clientesRoutes)
+app.use('/api/clientes', requireAuth, clientesRoutes)
 app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/campos', camposRoutes)
-app.use('/api/notificaciones', notificacionesRoutes)
+app.use('/api/notificaciones', requireAuth, notificacionesRoutes)
 app.use('/api/superadmin', superadminRoutes)
 app.use('/api/precios', preciosRoutes)
 app.use('/api/archivos', archivosRoutes)
-app.use('/api/cotizador-avanzado', cotizadorAvanzadoRouter)
+app.use('/api/cotizador-avanzado', requireAuth, cotizadorAvanzadoRouter)
 
 app.listen(PORT, () => {
   console.log(`✅ Cotexa backend corriendo en http://localhost:${PORT}`)

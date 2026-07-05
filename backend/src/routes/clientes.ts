@@ -29,7 +29,8 @@ router.patch('/:id', async (req: AuthRequest, res: Response) => {
     where: { id: Number(req.params.id), empresaId: req.user!.empresaId! }
   })
   if (!existe) return res.status(404).json({ error: 'No encontrado' })
-  const updated = await prisma.cliente.update({ where: { id: Number(req.params.id) }, data: req.body })
+  const { nombre, email, telefono, tipo, razonSocial, cuit, notasInternas } = req.body
+  const updated = await prisma.cliente.update({ where: { id: Number(req.params.id) }, data: { nombre, email, telefono, tipo, razonSocial, cuit, notasInternas } })
   res.json(updated)
 })
 
